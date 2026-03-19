@@ -22,6 +22,15 @@ function App() {
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [mcpConnected, setMcpConnected] = useState(false);
   const [mode, setMode] = useState<ViewMode>('dashboard');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    if (typeof window !== 'undefined') return (localStorage.getItem('lido-theme') as 'dark' | 'light') || 'dark';
+    return 'dark';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('lido-theme', theme);
+  }, [theme]);
 
   // Impersonation state — lives at App level so it affects everything
   const [impersonateAddress, setImpersonateAddress] = useState('');
@@ -88,6 +97,11 @@ function App() {
         </div>
 
         <div className="header-controls">
+          {/* Theme Toggle */}
+          <button className="theme-toggle" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
           {/* Mode Toggle */}
           <div className="mode-toggle">
             <button className={`mode-btn ${mode === 'dashboard' ? 'mode-active' : ''}`} onClick={() => setMode('dashboard')}>Dashboard</button>
