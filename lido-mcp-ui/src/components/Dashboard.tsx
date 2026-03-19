@@ -319,6 +319,7 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
   const [actionResult, setActionResult] = useState<ActionResult | null>(null);
   const [inlineParams, setInlineParams] = useState<InlineParams | null>(null);
   const [showAllWithdrawals, setShowAllWithdrawals] = useState(false);
+  const [withdrawalFilter, setWithdrawalFilter] = useState<'all' | 'claimable' | 'pending' | 'claimed'>('all');
   const resultRef = useRef<HTMLDivElement>(null);
   const { execute: executeViaWallet, isReady: walletReady } = useContractExecutor();
 
@@ -342,34 +343,39 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
   }, [walletAddress, chainId]);
 
   const callTool = useCallback(async (toolName: string, args: Record<string, any> = {}) => {
-    setActionResult({ type: 'loading', title: toolName, tool: toolName });
     setInlineParams(null);
-    try {
-      // Auto-inject chain_id from connected wallet
-      if (chainId && !args.chain_id) {
-        args.chain_id = chainId;
-      }
-      if (walletAddress && !args.address) {
-        const tool = tools.find(t => t.name === toolName);
-        if (tool?.inputSchema?.properties && 'address' in tool.inputSchema.properties) args.address = walletAddress;
-      }
-      if (isWriteTool(toolName) && walletReady) {
-        setActionResult({ type: 'loading', title: `${toolName} — waiting for wallet signature...`, tool: toolName });
-        try {
-          const result = await executeViaWallet(toolName, args);
-          setActionResult({ type: 'data', title: toolName, data: result.result, tool: toolName });
-        } catch (walletErr: any) {
-          const msg = walletErr.message || 'Wallet rejected or timed out';
-          // User rejected in MetaMask
-          if (msg.includes('rejected') || msg.includes('denied') || msg.includes('cancel')) {
-            setActionResult({ type: 'error', title: toolName, error: 'Transaction rejected by wallet.', tool: toolName });
-          } else {
-            setActionResult({ type: 'error', title: toolName, error: msg, tool: toolName });
-          }
-        }
-      } else if (isWriteTool(toolName) && !walletReady) {
+
+    // Auto-inject chain_id and address silently (never show in param forms)
+    if (chainId) args.chain_id = chainId;
+    if (walletAddress && !args.address) {
+      const tool = tools.find(t => t.name === toolName);
+      if (tool?.inputSchema?.properties && 'address' in tool.inputSchema.properties) args.address = walletAddress;
+    }
+
+    if (isWriteTool(toolName)) {
+      if (!walletReady) {
         setActionResult({ type: 'error', title: toolName, error: 'Wallet not connected. Connect your wallet to execute write operations.', tool: toolName });
-      } else {
+        return;
+      }
+      setActionResult({ type: 'loading', title: 'Preparing transaction...', tool: toolName });
+      try {
+        // This calls lido_prepare_transaction via MCP, then sends via wallet
+        setActionResult({ type: 'loading', title: 'Confirm in your wallet...', tool: toolName });
+        const result = await executeViaWallet(toolName, args);
+        setActionResult({ type: 'data', title: `${toolName} ✓`, data: result.result, tool: toolName });
+        // Refresh summary after successful write
+        fetchSummary();
+      } catch (walletErr: any) {
+        const msg = walletErr.message || String(walletErr);
+        if (msg.includes('rejected') || msg.includes('denied') || msg.includes('cancel') || msg.includes('User refused')) {
+          setActionResult({ type: 'error', title: toolName, error: 'Transaction rejected by wallet.', tool: toolName });
+        } else {
+          setActionResult({ type: 'error', title: toolName, error: msg.substring(0, 200), tool: toolName });
+        }
+      }
+    } else {
+      setActionResult({ type: 'loading', title: toolName, tool: toolName });
+      try {
         const res = await fetch(apiUrl('/api/call'), {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: toolName, args }),
@@ -377,9 +383,9 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
         const data = await res.json();
         const text = data.content?.[0]?.text;
         setActionResult({ type: 'data', title: toolName, data: text ? JSON.parse(text) : data, tool: toolName });
+      } catch (err: any) {
+        setActionResult({ type: 'error', title: toolName, error: err.message, tool: toolName });
       }
-    } catch (err: any) {
-      setActionResult({ type: 'error', title: toolName, error: err.message, tool: toolName });
     }
   }, [tools, walletAddress, walletReady, executeViaWallet]);
 
@@ -389,15 +395,16 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
 
     const tool = tools.find(t => t.name === toolName);
     if (!tool) return;
-    const fields = extractParams(tool);
+    const allFields = extractParams(tool);
+    // Hide chain_id and address from UI — they're injected automatically
+    const fields = allFields.filter(f => f.name !== 'chain_id' && f.name !== 'address');
     if (fields.length === 0) { callTool(toolName); return; }
 
-    // Start with defaults — but override dry_run to false for UI (user clicks Execute to confirm)
+    // Start with defaults — but override dry_run to false for UI
     const values: Record<string, string> = {};
     for (const f of fields) {
       if (f.name === 'dry_run') values[f.name] = 'false';
       else if (f.default !== undefined) values[f.name] = String(f.default);
-      else if (f.name === 'address' && walletAddress) values[f.name] = walletAddress;
       else values[f.name] = '';
     }
 
@@ -522,9 +529,17 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
     );
   }
 
+  const allWithdrawals = [...(summary?.withdrawals.requests || [])].sort((a: any, b: any) => Number(b.id) - Number(a.id));
+  const filteredWithdrawals = allWithdrawals.filter((r: any) => {
+    if (withdrawalFilter === 'all') return true;
+    if (withdrawalFilter === 'claimable') return r.is_finalized && !r.is_claimed;
+    if (withdrawalFilter === 'pending') return !r.is_finalized && !r.is_claimed;
+    if (withdrawalFilter === 'claimed') return r.is_claimed;
+    return true;
+  });
   const visibleWithdrawals = showAllWithdrawals
-    ? summary?.withdrawals.requests || []
-    : (summary?.withdrawals.requests || []).slice(0, 4);
+    ? filteredWithdrawals
+    : filteredWithdrawals.slice(0, 5);
 
   return (
     <div className="dash">
@@ -701,26 +716,48 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
           {summary.withdrawals.total_requests > 0 && (
             <div className="dash-withdrawals">
               <div className="dash-stat-top">
-                <span className="dash-stat-label">Withdrawals</span>
-                <span className={`dash-pill ${summary.withdrawals.claimable > 0 ? 'dash-pill-green' : 'dash-pill-amber'}`}>
-                  {summary.withdrawals.claimable > 0 ? `${summary.withdrawals.claimable} Claimable` : `${summary.withdrawals.pending} Pending`}
-                </span>
+                <span className="dash-stat-label">Withdrawals ({summary.withdrawals.total_requests})</span>
               </div>
-              {visibleWithdrawals.map((req: any) => (
-                <div className="dash-w-row" key={req.id}>
-                  <span className="dash-w-id">#{req.id}</span>
-                  <span className="dash-w-amount">{req.amount_steth} stETH</span>
-                  <span className={`dash-w-status ${req.is_finalized && !req.is_claimed ? 'claimable' : req.is_claimed ? 'claimed' : 'pending'}`}>
-                    {req.is_claimed ? 'Claimed' : req.is_finalized ? 'Claimable' : 'Pending'}
-                  </span>
-                  {req.is_finalized && !req.is_claimed && (
-                    <button className="dash-claim-btn" onClick={() => callTool('lido_claim_single_withdrawal', { request_id: req.id, dry_run: false })}>Claim</button>
-                  )}
-                </div>
-              ))}
-              {summary.withdrawals.total_requests > 4 && (
+
+              {/* Filter chips */}
+              <div className="dash-w-filters">
+                {([
+                  { key: 'all' as const, label: 'All', count: allWithdrawals.length },
+                  { key: 'claimable' as const, label: 'Claimable', count: summary.withdrawals.claimable },
+                  { key: 'pending' as const, label: 'Pending', count: summary.withdrawals.pending },
+                ]).map(f => (
+                  <button
+                    key={f.key}
+                    className={`dash-w-filter ${withdrawalFilter === f.key ? 'active' : ''} ${f.key === 'claimable' ? 'green' : f.key === 'pending' ? 'amber' : ''}`}
+                    onClick={() => { setWithdrawalFilter(f.key); setShowAllWithdrawals(false); }}
+                  >
+                    {f.label} <span className="dash-w-filter-count">{f.count}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Scrollable list */}
+              <div className={`dash-w-list ${showAllWithdrawals ? 'expanded' : ''}`}>
+                {visibleWithdrawals.length === 0 && (
+                  <div className="dash-w-empty">No {withdrawalFilter} withdrawals</div>
+                )}
+                {visibleWithdrawals.map((req: any) => (
+                  <div className="dash-w-row" key={req.id}>
+                    <span className="dash-w-id">#{req.id}</span>
+                    <span className="dash-w-amount">{parseFloat(req.amount_steth) < 0.0001 ? parseFloat(req.amount_steth).toExponential(2) : parseFloat(req.amount_steth).toFixed(4)} stETH</span>
+                    <span className={`dash-w-status ${req.is_finalized && !req.is_claimed ? 'claimable' : req.is_claimed ? 'claimed' : 'pending'}`}>
+                      {req.is_claimed ? 'Claimed' : req.is_finalized ? 'Claimable' : 'Pending'}
+                    </span>
+                    {req.is_finalized && !req.is_claimed && (
+                      <button className="dash-claim-btn" onClick={() => callTool('lido_claim_single_withdrawal', { request_id: req.id, dry_run: false })}>Claim</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {filteredWithdrawals.length > 5 && (
                 <div className="dash-w-more" onClick={() => setShowAllWithdrawals(!showAllWithdrawals)}>
-                  {showAllWithdrawals ? 'Show less ↑' : `Show ${summary.withdrawals.total_requests - 4} more ↓`}
+                  {showAllWithdrawals ? 'Show less ↑' : `Show ${filteredWithdrawals.length - 5} more ↓`}
                 </div>
               )}
             </div>

@@ -89,9 +89,9 @@ export function register(server: McpServer, provider: Provider): void {
               address: contracts.withdrawalQueue,
               abi: withdrawalQueueAbi,
               functionName: 'getWithdrawalStatus',
-              args: [withdrawalRequests.slice(0, 10)], // Limit to first 10
+              args: [withdrawalRequests], // Limit to first 10
             }) as any[];
-            withdrawalDetails = withdrawalRequests.slice(0, 10).map((id, i) => {
+            withdrawalDetails = withdrawalRequests.map((id, i) => {
               const s = statuses[i];
               return {
                 id: id.toString(),
@@ -101,7 +101,7 @@ export function register(server: McpServer, provider: Provider): void {
               };
             });
           } catch {
-            withdrawalDetails = withdrawalRequests.slice(0, 10).map(id => ({ id: id.toString(), status: 'unable to fetch' }));
+            withdrawalDetails = withdrawalRequests.map(id => ({ id: id.toString(), status: 'unable to fetch' }));
           }
         }
 
