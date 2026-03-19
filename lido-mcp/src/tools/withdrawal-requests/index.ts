@@ -4,7 +4,8 @@ import { success, error } from "../../utils/format.js";
 import { withdrawalQueueAbi } from "../../abis/withdrawal-queue.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   getWalletAddress,
   formatTokenAmount,
   extractErrorMessage,
@@ -22,9 +23,6 @@ interface WithdrawalStatus {
 }
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_withdrawal_requests",
     "Get all withdrawal request IDs and their statuses for an address",
@@ -33,9 +31,13 @@ export function register(server: McpServer, provider: Provider): void {
         .string()
         .optional()
         .describe("Address to query (defaults to connected wallet)"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { address?: string }) => {
+    async (args: { address?: string; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -43,7 +45,7 @@ export function register(server: McpServer, provider: Provider): void {
           );
         }
 
-        const requestIds = (await provider.publicClient.readContract({
+        const requestIds = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: withdrawalQueueAbi,
           functionName: "getWithdrawalRequests",
@@ -59,7 +61,7 @@ export function register(server: McpServer, provider: Provider): void {
           });
         }
 
-        const statuses = (await provider.publicClient.readContract({
+        const statuses = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: withdrawalQueueAbi,
           functionName: "getWithdrawalStatus",

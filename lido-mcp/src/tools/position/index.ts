@@ -8,7 +8,8 @@ import { erc20Abi } from "../../abis/erc20.js";
 import { withdrawalQueueAbi } from "../../abis/withdrawal-queue.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   getWalletAddress,
   formatTokenAmount,
   extractErrorMessage,
@@ -74,9 +75,6 @@ interface WithdrawalStatus {
 // ---------------------------------------------------------------------------
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_position_overview",
     "Get a comprehensive overview of a Lido position including all Ethereum balances (ETH, stETH, wstETH, LDO), pending withdrawals, projected rewards, and optionally L2 wstETH balances.",
@@ -93,9 +91,13 @@ export function register(server: McpServer, provider: Provider): void {
         .describe(
           "Include wstETH balances on L2 chains (Arbitrum, Optimism, Base, Polygon). Slower due to cross-chain RPC calls.",
         ),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { address?: string; include_l2: boolean }) => {
+    async (args: { address?: string; include_l2: boolean; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -104,11 +106,11 @@ export function register(server: McpServer, provider: Provider): void {
         }
 
         // --- Ethereum Balances (multicall) ---
-        const ethBalancePromise = provider.publicClient.getBalance({
+        const ethBalancePromise = client.getBalance({
           address: walletAddress,
         });
 
-        const multicallPromise = provider.publicClient.multicall({
+        const multicallPromise = client.multicall({
           contracts: [
             {
               address: contracts.lido,
@@ -156,7 +158,7 @@ export function register(server: McpServer, provider: Provider): void {
         // --- Withdrawal Requests ---
         const withdrawalPromise = (async () => {
           try {
-            const requestIds = (await provider.publicClient.readContract({
+            const requestIds = (await client.readContract({
               address: contracts.withdrawalQueue,
               abi: withdrawalQueueAbi,
               functionName: "getWithdrawalRequests",
@@ -167,7 +169,7 @@ export function register(server: McpServer, provider: Provider): void {
               return { requestIds: [], statuses: [], claimableAmounts: [] };
             }
 
-            const statuses = (await provider.publicClient.readContract({
+            const statuses = (await client.readContract({
               address: contracts.withdrawalQueue,
               abi: withdrawalQueueAbi,
               functionName: "getWithdrawalStatus",
@@ -188,20 +190,20 @@ export function register(server: McpServer, provider: Provider): void {
             if (finalizedIds.length > 0) {
               try {
                 const lastCheckpointIndex =
-                  (await provider.publicClient.readContract({
+                  (await client.readContract({
                     address: contracts.withdrawalQueue,
                     abi: withdrawalQueueAbi,
                     functionName: "getLastCheckpointIndex",
                   })) as bigint;
 
-                const hints = (await provider.publicClient.readContract({
+                const hints = (await client.readContract({
                   address: contracts.withdrawalQueue,
                   abi: withdrawalQueueAbi,
                   functionName: "findCheckpointHints",
                   args: [finalizedIds, 1n, lastCheckpointIndex],
                 })) as bigint[];
 
-                claimableAmounts = (await provider.publicClient.readContract({
+                claimableAmounts = (await client.readContract({
                   address: contracts.withdrawalQueue,
                   abi: withdrawalQueueAbi,
                   functionName: "getClaimableEther",

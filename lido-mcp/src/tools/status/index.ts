@@ -1,5 +1,6 @@
+import { z } from "zod";
 import { success, error } from "../../utils/format.js";
-import { getChainId, extractErrorMessage } from "../../utils/helpers.js";
+import { resolveChainId, getClient, extractErrorMessage } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Provider } from "../../provider.js";
 
@@ -11,12 +12,15 @@ export function register(server: McpServer, provider: Provider): void {
   server.tool(
     "lido_status",
     "Check Lido MCP server health and configuration",
-    {},
-    async () => {
+    {
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
+    },
+    async (args: { chain_id?: number }) => {
       try {
-        const chainId = getChainId(provider);
-        const chainName = provider.publicClient.chain?.name ?? "unknown";
-        const blockNumber = await provider.publicClient.getBlockNumber();
+        const chainId = resolveChainId(provider, args.chain_id);
+        const client = getClient(provider, args.chain_id);
+        const chainName = client.chain?.name ?? "unknown";
+        const blockNumber = await client.getBlockNumber();
 
         const walletConfigured = !!provider.account;
         let maskedAddress: string | null = null;
@@ -33,6 +37,11 @@ export function register(server: McpServer, provider: Provider): void {
           wallet_address: maskedAddress,
           write_operations_available: walletConfigured,
           current_block: blockNumber.toString(),
+          supported_chains: [
+            { name: 'Ethereum Mainnet', chain_id: 1 },
+            { name: 'Holesky Testnet', chain_id: 17000 },
+            { name: 'Hoodi Testnet', chain_id: 560048 },
+          ],
           summary: walletConfigured
             ? `Connected to ${chainName} (chain ${chainId}) at block ${blockNumber}. Wallet ${maskedAddress} is configured for read and write operations.`
             : `Connected to ${chainName} (chain ${chainId}) at block ${blockNumber}. No wallet configured — read-only mode.`,

@@ -5,7 +5,8 @@ import { executeOrSimulate } from "../../utils/dry-run.js";
 import { votingAbi } from "../../abis/voting.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   extractErrorMessage,
@@ -43,13 +44,9 @@ type VoteData = [
 // ---------------------------------------------------------------------------
 
 export function registerCastVote(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-  const votingAddress = contracts.voting;
-
   server.tool(
     "lido_cast_vote",
-    "Cast a vote on a Lido DAO governance proposal (Aragon vote). Defaults to dry_run=true for simulation.",
+    "Cast a vote on a Lido DAO governance proposal (Aragon vote). Defaults to dry_run=true for simulation. Note: chain_id affects contract address lookup but the wallet client stays on the default chain.",
     {
       vote_id: z.number().int().nonnegative().describe("The vote ID to cast a vote on"),
       vote_for: z.boolean().describe("true = vote Yea, false = vote Nay"),
@@ -57,15 +54,20 @@ export function registerCastVote(server: McpServer, provider: Provider): void {
         .boolean()
         .default(true)
         .describe("If true, simulate the vote. If false, execute it."),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { vote_id: number; vote_for: boolean; dry_run: boolean }) => {
+    async (args: { vote_id: number; vote_for: boolean; dry_run: boolean; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const votingAddress = contracts.voting;
+        const client = getClient(provider, args.chain_id);
         const { account } = requireWallet(provider);
         const walletAddress = account.address;
         const voteId = BigInt(args.vote_id);
 
         // Check if the user can vote
-        const canVote = (await provider.publicClient.readContract({
+        const canVote = (await client.readContract({
           address: votingAddress,
           abi: votingAbi,
           functionName: "canVote",
@@ -75,7 +77,7 @@ export function registerCastVote(server: McpServer, provider: Provider): void {
         if (!canVote) {
           // Fetch vote details to give a more informative error
           try {
-            const voteData = (await provider.publicClient.readContract({
+            const voteData = (await client.readContract({
               address: votingAddress,
               abi: votingAbi,
               functionName: "getVote",
@@ -107,7 +109,7 @@ export function registerCastVote(server: McpServer, provider: Provider): void {
 
         // Execute or simulate the vote
         const result = await executeOrSimulate({
-          publicClient: provider.publicClient,
+          publicClient: client,
           walletClient: provider.walletClient,
           account,
           address: votingAddress,
@@ -124,7 +126,7 @@ export function registerCastVote(server: McpServer, provider: Provider): void {
         // Fetch updated vote tallies (best-effort)
         let tallies: Record<string, unknown> = {};
         try {
-          const voteData = (await provider.publicClient.readContract({
+          const voteData = (await client.readContract({
             address: votingAddress,
             abi: votingAbi,
             functionName: "getVote",

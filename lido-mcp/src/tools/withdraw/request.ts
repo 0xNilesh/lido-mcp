@@ -7,7 +7,8 @@ import { lidoAbi } from "../../abis/lido.js";
 import { wstethAbi } from "../../abis/wsteth.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   formatTokenAmount,
@@ -101,12 +102,9 @@ function splitAmounts(totalAmount: bigint): bigint[] {
 // ---------------------------------------------------------------------------
 
 export function registerRequestWithdrawal(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_request_withdrawal",
-    "Request a withdrawal of stETH or wstETH from Lido. Splits amounts > 1000 ETH into multiple requests. Defaults to dry_run=true for safe simulation.",
+    "Request a withdrawal of stETH or wstETH from Lido. Splits amounts > 1000 ETH into multiple requests. Defaults to dry_run=true for safe simulation. Note: chain_id affects contract address lookup; wallet stays on default chain.",
     {
       amount: z.string().describe("Amount to withdraw in ETH units (e.g. '1.5')"),
       token: z
@@ -117,9 +115,13 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
         .boolean()
         .default(true)
         .describe("If true, simulate only. If false, execute the withdrawal request."),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { amount: string; token: "stETH" | "wstETH"; dry_run: boolean }) => {
+    async (args: { amount: string; token: "stETH" | "wstETH"; dry_run: boolean; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
         const walletAddress = account.address;
 
@@ -134,7 +136,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
         const fnName = isWstETH ? "requestWithdrawalsWstETH" : "requestWithdrawals";
 
         // Check if withdrawals are paused
-        const isPaused = await provider.publicClient.readContract({
+        const isPaused = await client.readContract({
           address: contracts.withdrawalQueue,
           abi: fullWithdrawalQueueAbi,
           functionName: "isPaused",
@@ -147,7 +149,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
         }
 
         // Check token balance
-        const tokenBalance = (await provider.publicClient.readContract({
+        const tokenBalance = (await client.readContract({
           address: tokenAddress,
           abi: tokenAbi,
           functionName: "balanceOf",
@@ -164,7 +166,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
         const amounts = splitAmounts(amountWei);
 
         // Check current allowance
-        const allowance = (await provider.publicClient.readContract({
+        const allowance = (await client.readContract({
           address: tokenAddress,
           abi: tokenAbi,
           functionName: "allowance",
@@ -189,7 +191,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
 
           // Try to simulate the request (may fail if approval needed)
           try {
-            const { result: simResult } = await provider.publicClient.simulateContract({
+            const { result: simResult } = await client.simulateContract({
               account,
               address: contracts.withdrawalQueue,
               abi: fullWithdrawalQueueAbi,
@@ -211,7 +213,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
 
           // Estimate gas costs (best-effort)
           try {
-            const gasEstimate = await provider.publicClient.estimateGas({
+            const gasEstimate = await client.estimateGas({
               account: walletAddress,
               to: contracts.withdrawalQueue,
               data: encodeFunctionData({
@@ -220,7 +222,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
                 args: [amounts, walletAddress],
               }),
             });
-            const feeData = await provider.publicClient.estimateFeesPerGas();
+            const feeData = await client.estimateFeesPerGas();
             const maxFeePerGas: bigint = feeData.maxFeePerGas ?? 0n;
             const estimatedCost = gasEstimate * maxFeePerGas;
             result.estimated_gas = gasEstimate.toString();
@@ -241,7 +243,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
 
           // Step 1: Approve if needed
           if (needsApproval) {
-            const { request: approveRequest } = await provider.publicClient.simulateContract({
+            const { request: approveRequest } = await client.simulateContract({
               account,
               address: tokenAddress,
               abi: tokenAbi,
@@ -249,8 +251,8 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
               args: [contracts.withdrawalQueue, amountWei],
             });
 
-            const approveTxHash = await walletClient.writeContract(approveRequest);
-            const approveReceipt = await provider.publicClient.waitForTransactionReceipt({
+            const approveTxHash = await walletClient.writeContract(approveRequest as any);
+            const approveReceipt = await client.waitForTransactionReceipt({
               hash: approveTxHash,
             });
 
@@ -264,7 +266,7 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
           }
 
           // Step 2: Request withdrawals
-          const { request: withdrawRequest } = await provider.publicClient.simulateContract({
+          const { request: withdrawRequest } = await client.simulateContract({
             account,
             address: contracts.withdrawalQueue,
             abi: fullWithdrawalQueueAbi,
@@ -272,8 +274,8 @@ export function registerRequestWithdrawal(server: McpServer, provider: Provider)
             args: [amounts, walletAddress],
           });
 
-          const withdrawTxHash = await walletClient.writeContract(withdrawRequest);
-          const withdrawReceipt = await provider.publicClient.waitForTransactionReceipt({
+          const withdrawTxHash = await walletClient.writeContract(withdrawRequest as any);
+          const withdrawReceipt = await client.waitForTransactionReceipt({
             hash: withdrawTxHash,
           });
 

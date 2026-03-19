@@ -5,7 +5,8 @@ import { writeMutex } from "../../utils/mutex.js";
 import { lidoAbi } from "../../abis/lido.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   formatTokenAmount,
@@ -38,11 +39,13 @@ export function register(server: McpServer, provider: Provider): void {
         .boolean()
         .default(true)
         .describe("If true, simulate without executing (default: true)"),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { amount: string; referral_address?: string; dry_run: boolean }) => {
+    async (args: { amount: string; referral_address?: string; dry_run: boolean; chain_id?: number }) => {
       try {
-        const chainId = getChainId(provider);
+        const chainId = resolveChainId(provider, args.chain_id);
         const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
 
         const walletAddress = account.address;
@@ -55,8 +58,8 @@ export function register(server: McpServer, provider: Provider): void {
 
         // Fetch ETH balance and current stake limit in parallel
         const [ethBalance, stakeLimit] = await Promise.all([
-          provider.publicClient.getBalance({ address: walletAddress }),
-          provider.publicClient.readContract({
+          client.getBalance({ address: walletAddress }),
+          client.readContract({
             address: contracts.lido,
             abi: lidoAbi,
             functionName: "getCurrentStakeLimit",
@@ -77,7 +80,7 @@ export function register(server: McpServer, provider: Provider): void {
 
         // ---- Dry run (simulation) ----
         if (args.dry_run) {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.lido,
             abi: lidoAbi,
             functionName: "submit",
@@ -87,15 +90,15 @@ export function register(server: McpServer, provider: Provider): void {
           });
 
           const gasEstimate = BigInt(
-            await provider.publicClient.estimateGas({
+            await client.estimateGas({
               to: contracts.lido,
               value: amountWei,
-              data: request.data,
+              data: (request as any).data,
               account,
             }),
           );
 
-          const gasPrice = BigInt(await provider.publicClient.getGasPrice());
+          const gasPrice = BigInt(await client.getGasPrice());
           const estimatedFee = gasEstimate * gasPrice;
 
           return success({
@@ -115,7 +118,7 @@ export function register(server: McpServer, provider: Provider): void {
         // ---- Live execution ----
         await writeMutex.acquire();
         try {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.lido,
             abi: lidoAbi,
             functionName: "submit",
@@ -124,9 +127,9 @@ export function register(server: McpServer, provider: Provider): void {
             account,
           });
 
-          const txHash = await walletClient.writeContract(request);
+          const txHash = await walletClient.writeContract(request as any);
 
-          const receipt = await provider.publicClient.waitForTransactionReceipt({
+          const receipt = await client.waitForTransactionReceipt({
             hash: txHash,
             confirmations: 1,
           });

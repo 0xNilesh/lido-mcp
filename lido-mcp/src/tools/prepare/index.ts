@@ -10,7 +10,7 @@ import { encodeFunctionData, parseEther, type Address } from 'viem';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { Provider } from '../../provider.js';
 import { getContracts } from '../../contracts.js';
-import { getChainId } from '../../utils/helpers.js';
+import { resolveChainId } from '../../utils/helpers.js';
 import { success, error } from '../../utils/format.js';
 import { lidoAbi } from '../../abis/lido.js';
 import { wstethAbi } from '../../abis/wsteth.js';
@@ -37,10 +37,11 @@ export function register(server: McpServer, provider: Provider): void {
       request_id: z.string().optional().describe('Withdrawal request ID (for claim)'),
       referral_address: z.string().optional().describe('Referral address (for stake)'),
       sender: z.string().optional().describe('Sender/owner address (for the transaction from field)'),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
     async (args) => {
       try {
-        const chainId = getChainId(provider);
+        const chainId = resolveChainId(provider, args.chain_id);
         const contracts = getContracts(chainId);
         const sender = (args.sender || '0x0000000000000000000000000000000000000000') as Address;
 

@@ -1,22 +1,22 @@
 import { z } from "zod";
 import { success, error } from "../../utils/format.js";
 import { getContracts } from "../../contracts.js";
-import { getChainId, extractErrorMessage } from "../../utils/helpers.js";
+import { resolveChainId, extractErrorMessage } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Provider } from "../../provider.js";
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
-  const chainName = chainId === 1 ? "Ethereum Mainnet" : chainId === 560048 ? "Hoodi Testnet" : "Holesky Testnet";
-
   server.tool(
     "lido_get_contract_addresses",
-    "Get all Lido contract addresses for the current chain (stETH, wstETH, WithdrawalQueue, Voting, LDO, Locator, StakingRouter, NodeOperatorsRegistry, etc.)",
-    {},
-    async () => {
+    "Get all Lido contract addresses for the specified chain (stETH, wstETH, WithdrawalQueue, Voting, LDO, Locator, StakingRouter, NodeOperatorsRegistry, etc.)",
+    {
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
+    },
+    async (args: { chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const chainName = chainId === 1 ? "Ethereum Mainnet" : chainId === 560048 ? "Hoodi Testnet" : "Holesky Testnet";
         return success({
           chain: chainName,
           chain_id: chainId,

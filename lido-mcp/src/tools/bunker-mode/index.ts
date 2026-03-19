@@ -1,21 +1,24 @@
+import { z } from "zod";
 import { success, error } from "../../utils/format.js";
 import { withdrawalQueueAbi } from "../../abis/withdrawal-queue.js";
 import { getContracts } from "../../contracts.js";
-import { getChainId, extractErrorMessage } from "../../utils/helpers.js";
+import { resolveChainId, getClient, extractErrorMessage } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Provider } from "../../provider.js";
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_bunker_mode",
     "Check if bunker mode is active and get the timestamp since when it has been active",
-    {},
-    async () => {
+    {
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
+    },
+    async (args: { chain_id?: number }) => {
       try {
-        const results = await provider.publicClient.multicall({
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
+        const results = await client.multicall({
           contracts: [
             {
               address: contracts.withdrawalQueue,

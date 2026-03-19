@@ -5,7 +5,8 @@ import { writeMutex } from "../../utils/mutex.js";
 import { withdrawalQueueAbi } from "../../abis/withdrawal-queue.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   formatTokenAmount,
@@ -41,12 +42,9 @@ const fullWithdrawalQueueAbi = [
 // ---------------------------------------------------------------------------
 
 export function registerClaimWithdrawal(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_claim_withdrawal",
-    "Claim finalized withdrawal requests from Lido. ETH is sent to the owner. Defaults to dry_run=true.",
+    "Claim finalized withdrawal requests from Lido. ETH is sent to the owner. Defaults to dry_run=true. Note: chain_id affects contract address lookup; wallet stays on default chain.",
     {
       request_ids: z
         .array(z.string())
@@ -55,9 +53,12 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
         .boolean()
         .default(true)
         .describe("If true, simulate the claim. If false, execute it."),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { request_ids: string[]; dry_run: boolean }) => {
+    async (args: { request_ids: string[]; dry_run: boolean; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
         const walletAddress = account.address;
 
@@ -68,7 +69,7 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
         const requestIds = args.request_ids.map((id) => BigInt(id));
 
         // Check withdrawal statuses
-        const statuses = (await provider.publicClient.readContract({
+        const statuses = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: fullWithdrawalQueueAbi,
           functionName: "getWithdrawalStatus",
@@ -104,13 +105,13 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
         }
 
         // Get checkpoint hints
-        const lastCheckpointIndex = (await provider.publicClient.readContract({
+        const lastCheckpointIndex = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: fullWithdrawalQueueAbi,
           functionName: "getLastCheckpointIndex",
         })) as bigint;
 
-        const hints = (await provider.publicClient.readContract({
+        const hints = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: fullWithdrawalQueueAbi,
           functionName: "findCheckpointHints",
@@ -118,7 +119,7 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
         })) as bigint[];
 
         // Get claimable ETH amounts
-        const claimableAmounts = (await provider.publicClient.readContract({
+        const claimableAmounts = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: fullWithdrawalQueueAbi,
           functionName: "getClaimableEther",
@@ -138,7 +139,7 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
           };
 
           try {
-            await provider.publicClient.simulateContract({
+            await client.simulateContract({
               account,
               address: contracts.withdrawalQueue,
               abi: fullWithdrawalQueueAbi,
@@ -146,7 +147,7 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
               args: [requestIds, hints],
             });
 
-            const gasEstimate = await provider.publicClient.estimateGas({
+            const gasEstimate = await client.estimateGas({
               account: walletAddress,
               to: contracts.withdrawalQueue,
               data: encodeFunctionData({
@@ -155,7 +156,7 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
                 args: [requestIds, hints],
               }),
             });
-            const feeData = await provider.publicClient.estimateFeesPerGas();
+            const feeData = await client.estimateFeesPerGas();
             const maxFeePerGas: bigint = feeData.maxFeePerGas ?? 0n;
             const estimatedCost = gasEstimate * maxFeePerGas;
 
@@ -176,11 +177,11 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
         await writeMutex.acquire();
         try {
           // Get ETH balance before claim to report delta
-          const ethBefore = (await provider.publicClient.getBalance({
+          const ethBefore = (await client.getBalance({
             address: walletAddress,
           })) as bigint;
 
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             account,
             address: contracts.withdrawalQueue,
             abi: fullWithdrawalQueueAbi,
@@ -188,8 +189,8 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
             args: [requestIds, hints],
           });
 
-          const txHash = await walletClient.writeContract(request);
-          const receipt = await provider.publicClient.waitForTransactionReceipt({
+          const txHash = await walletClient.writeContract(request as any);
+          const receipt = await client.waitForTransactionReceipt({
             hash: txHash,
           });
 
@@ -199,7 +200,7 @@ export function registerClaimWithdrawal(server: McpServer, provider: Provider): 
             );
           }
 
-          const ethAfter = (await provider.publicClient.getBalance({
+          const ethAfter = (await client.getBalance({
             address: walletAddress,
           })) as bigint;
           const ethReceived = ethAfter - ethBefore;

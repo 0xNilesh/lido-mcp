@@ -6,7 +6,8 @@ import { wstethAbi } from "../../abis/wsteth.js";
 import { erc20Abi } from "../../abis/erc20.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   getWalletAddress,
   formatTokenAmount,
   extractErrorMessage,
@@ -29,10 +30,11 @@ export function register(server: McpServer, provider: Provider): void {
         .describe(
           "Ethereum address to query (defaults to connected wallet address)",
         ),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { address?: string }) => {
+    async (args: { address?: string; chain_id?: number }) => {
       try {
-        const chainId = getChainId(provider);
+        const chainId = resolveChainId(provider, args.chain_id);
         const contracts = getContracts(chainId);
 
         const walletAddress = getWalletAddress(provider, args.address);
@@ -42,12 +44,14 @@ export function register(server: McpServer, provider: Provider): void {
           );
         }
 
+        const client = getClient(provider, args.chain_id);
+
         // Batch all reads using multicall + getBalance
         const [ethBalance, multicallResults] = await Promise.all([
-          provider.publicClient.getBalance({
+          client.getBalance({
             address: walletAddress,
           }) as Promise<bigint>,
-          provider.publicClient.multicall({
+          client.multicall({
             contracts: [
               {
                 address: contracts.lido,
@@ -92,7 +96,7 @@ export function register(server: McpServer, provider: Provider): void {
         let wstethInSteth = 0n;
         if (wstethBalance > 0n) {
           try {
-            wstethInSteth = (await provider.publicClient.readContract({
+            wstethInSteth = (await client.readContract({
               address: contracts.wsteth,
               abi: wstethAbi,
               functionName: "getStETHByWstETH",

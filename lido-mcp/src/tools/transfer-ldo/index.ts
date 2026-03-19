@@ -4,7 +4,8 @@ import { success, error } from "../../utils/format.js";
 import { writeMutex } from "../../utils/mutex.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   formatTokenAmount,
@@ -42,12 +43,9 @@ const erc20Abi = [
 // ---------------------------------------------------------------------------
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_transfer_ldo",
-    "Transfer LDO tokens to another address",
+    "Transfer LDO tokens to another address. Note: chain_id affects contract address lookup; wallet stays on default chain.",
     {
       to: z.string().describe("Recipient address"),
       amount: z.string().describe('Amount of LDO to transfer (e.g. "100")'),
@@ -55,9 +53,12 @@ export function register(server: McpServer, provider: Provider): void {
         .boolean()
         .default(true)
         .describe("If true, simulate without executing (default: true)"),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { to: string; amount: string; dry_run: boolean }) => {
+    async (args: { to: string; amount: string; dry_run: boolean; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
         const walletAddress = account.address;
         const recipient = args.to as `0x${string}`;
@@ -68,7 +69,7 @@ export function register(server: McpServer, provider: Provider): void {
         }
 
         // Check LDO balance
-        const ldoBalance = (await provider.publicClient.readContract({
+        const ldoBalance = (await client.readContract({
           address: contracts.ldo,
           abi: erc20Abi,
           functionName: "balanceOf",
@@ -83,7 +84,7 @@ export function register(server: McpServer, provider: Provider): void {
 
         // ---- Dry run (simulation) ----
         if (args.dry_run) {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.ldo,
             abi: erc20Abi,
             functionName: "transfer",
@@ -91,13 +92,13 @@ export function register(server: McpServer, provider: Provider): void {
             account,
           });
 
-          const gasEstimate = await provider.publicClient.estimateGas({
+          const gasEstimate = await client.estimateGas({
             to: contracts.ldo,
-            data: request.data,
+            data: (request as any).data,
             account,
           });
 
-          const gasPrice = await provider.publicClient.getGasPrice();
+          const gasPrice = await client.getGasPrice();
           const estimatedFee = BigInt(gasEstimate) * BigInt(gasPrice);
 
           return success({
@@ -115,7 +116,7 @@ export function register(server: McpServer, provider: Provider): void {
         // ---- Live execution ----
         await writeMutex.acquire();
         try {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.ldo,
             abi: erc20Abi,
             functionName: "transfer",
@@ -123,8 +124,8 @@ export function register(server: McpServer, provider: Provider): void {
             account,
           });
 
-          const txHash = await walletClient.writeContract(request);
-          const receipt = await provider.publicClient.waitForTransactionReceipt({
+          const txHash = await walletClient.writeContract(request as any);
+          const receipt = await client.waitForTransactionReceipt({
             hash: txHash,
             confirmations: 1,
           });

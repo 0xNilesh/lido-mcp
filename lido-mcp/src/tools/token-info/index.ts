@@ -1,23 +1,26 @@
+import { z } from "zod";
 import { formatEther } from "viem";
 import { success, error } from "../../utils/format.js";
 import { lidoAbi } from "../../abis/lido.js";
 import { wstethAbi } from "../../abis/wsteth.js";
 import { getContracts } from "../../contracts.js";
-import { getChainId, extractErrorMessage } from "../../utils/helpers.js";
+import { resolveChainId, getClient, extractErrorMessage } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Provider } from "../../provider.js";
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_token_info",
     "Get detailed token information for stETH and wstETH including name, symbol, decimals, total supply, and exchange rates",
-    {},
-    async () => {
+    {
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
+    },
+    async (args: { chain_id?: number }) => {
       try {
-        const results = await provider.publicClient.multicall({
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
+        const results = await client.multicall({
           contracts: [
             { address: contracts.lido, abi: lidoAbi, functionName: "name" },
             { address: contracts.lido, abi: lidoAbi, functionName: "symbol" },

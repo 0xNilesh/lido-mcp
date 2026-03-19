@@ -3,7 +3,8 @@ import { success, error } from "../../utils/format.js";
 import { votingAbi } from "../../abis/voting.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   getWalletAddress,
   extractErrorMessage,
 } from "../../utils/helpers.js";
@@ -11,9 +12,6 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Provider } from "../../provider.js";
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_delegate",
     "Get the current governance delegate for an address",
@@ -22,9 +20,12 @@ export function register(server: McpServer, provider: Provider): void {
         .string()
         .optional()
         .describe("Address to check delegate for (defaults to connected wallet)"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { address?: string }) => {
+    async (args: { address?: string; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -32,7 +33,7 @@ export function register(server: McpServer, provider: Provider): void {
           );
         }
 
-        const delegate = (await provider.publicClient.readContract({
+        const delegate = (await client.readContract({
           address: contracts.voting,
           abi: votingAbi,
           functionName: "getDelegate",
@@ -67,9 +68,12 @@ export function register(server: McpServer, provider: Provider): void {
         .string()
         .optional()
         .describe("Address to check (defaults to connected wallet)"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { vote_id: number; address?: string }) => {
+    async (args: { vote_id: number; address?: string; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -77,7 +81,7 @@ export function register(server: McpServer, provider: Provider): void {
           );
         }
 
-        const canVote = (await provider.publicClient.readContract({
+        const canVote = (await client.readContract({
           address: contracts.voting,
           abi: votingAbi,
           functionName: "canVote",
@@ -107,9 +111,12 @@ export function register(server: McpServer, provider: Provider): void {
         .string()
         .optional()
         .describe("Address to check (defaults to connected wallet)"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { vote_id: number; address?: string }) => {
+    async (args: { vote_id: number; address?: string; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -117,7 +124,7 @@ export function register(server: McpServer, provider: Provider): void {
           );
         }
 
-        const state = (await provider.publicClient.readContract({
+        const state = (await client.readContract({
           address: contracts.voting,
           abi: votingAbi,
           functionName: "getVoterState",
@@ -145,10 +152,14 @@ export function register(server: McpServer, provider: Provider): void {
   server.tool(
     "lido_get_vote_count",
     "Get the total number of governance votes (proposals) created",
-    {},
-    async () => {
+    {
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
+    },
+    async (args: { chain_id?: number }) => {
       try {
-        const count = (await provider.publicClient.readContract({
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
+        const count = (await client.readContract({
           address: contracts.voting,
           abi: votingAbi,
           functionName: "votesLength",

@@ -4,7 +4,8 @@ import { success, error } from "../../utils/format.js";
 import { writeMutex } from "../../utils/mutex.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   extractErrorMessage,
@@ -38,28 +39,28 @@ const votingDelegateAbi = [
 // ---------------------------------------------------------------------------
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   // ---- lido_delegate ----
   server.tool(
     "lido_delegate",
-    "Assign a delegate for Lido governance voting",
+    "Assign a delegate for Lido governance voting. Note: chain_id affects contract address lookup; wallet stays on default chain.",
     {
       delegate_address: z.string().describe("Address to delegate voting power to"),
       dry_run: z
         .boolean()
         .default(true)
         .describe("If true, simulate without executing (default: true)"),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { delegate_address: string; dry_run: boolean }) => {
+    async (args: { delegate_address: string; dry_run: boolean; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
         const delegateAddr = args.delegate_address as `0x${string}`;
 
         // ---- Dry run (simulation) ----
         if (args.dry_run) {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.voting,
             abi: votingDelegateAbi,
             functionName: "assignDelegate",
@@ -67,13 +68,13 @@ export function register(server: McpServer, provider: Provider): void {
             account,
           });
 
-          const gasEstimate = await provider.publicClient.estimateGas({
+          const gasEstimate = await client.estimateGas({
             to: contracts.voting,
-            data: request.data,
+            data: (request as any).data,
             account,
           });
 
-          const gasPrice = await provider.publicClient.getGasPrice();
+          const gasPrice = await client.getGasPrice();
           const estimatedFee = BigInt(gasEstimate) * BigInt(gasPrice);
 
           return success({
@@ -89,7 +90,7 @@ export function register(server: McpServer, provider: Provider): void {
         // ---- Live execution ----
         await writeMutex.acquire();
         try {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.voting,
             abi: votingDelegateAbi,
             functionName: "assignDelegate",
@@ -97,8 +98,8 @@ export function register(server: McpServer, provider: Provider): void {
             account,
           });
 
-          const txHash = await walletClient.writeContract(request);
-          const receipt = await provider.publicClient.waitForTransactionReceipt({
+          const txHash = await walletClient.writeContract(request as any);
+          const receipt = await client.waitForTransactionReceipt({
             hash: txHash,
             confirmations: 1,
           });
@@ -132,20 +133,23 @@ export function register(server: McpServer, provider: Provider): void {
   // ---- lido_undelegate ----
   server.tool(
     "lido_undelegate",
-    "Remove the current delegate for Lido governance voting",
+    "Remove the current delegate for Lido governance voting. Note: chain_id affects contract address lookup; wallet stays on default chain.",
     {
       dry_run: z
         .boolean()
         .default(true)
         .describe("If true, simulate without executing (default: true)"),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { dry_run: boolean }) => {
+    async (args: { dry_run: boolean; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
 
         // ---- Dry run (simulation) ----
         if (args.dry_run) {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.voting,
             abi: votingDelegateAbi,
             functionName: "unassignDelegate",
@@ -153,13 +157,13 @@ export function register(server: McpServer, provider: Provider): void {
             account,
           });
 
-          const gasEstimate = await provider.publicClient.estimateGas({
+          const gasEstimate = await client.estimateGas({
             to: contracts.voting,
-            data: request.data,
+            data: (request as any).data,
             account,
           });
 
-          const gasPrice = await provider.publicClient.getGasPrice();
+          const gasPrice = await client.getGasPrice();
           const estimatedFee = BigInt(gasEstimate) * BigInt(gasPrice);
 
           return success({
@@ -174,7 +178,7 @@ export function register(server: McpServer, provider: Provider): void {
         // ---- Live execution ----
         await writeMutex.acquire();
         try {
-          const { request } = await provider.publicClient.simulateContract({
+          const { request } = await client.simulateContract({
             address: contracts.voting,
             abi: votingDelegateAbi,
             functionName: "unassignDelegate",
@@ -182,8 +186,8 @@ export function register(server: McpServer, provider: Provider): void {
             account,
           });
 
-          const txHash = await walletClient.writeContract(request);
-          const receipt = await provider.publicClient.waitForTransactionReceipt({
+          const txHash = await walletClient.writeContract(request as any);
+          const receipt = await client.waitForTransactionReceipt({
             hash: txHash,
             confirmations: 1,
           });

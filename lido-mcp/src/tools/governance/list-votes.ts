@@ -4,7 +4,8 @@ import { success, error } from "../../utils/format.js";
 import { votingAbi } from "../../abis/voting.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   extractErrorMessage,
 } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -53,10 +54,6 @@ type VoteData = [
 // ---------------------------------------------------------------------------
 
 export function registerListVotes(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-  const votingAddress = contracts.voting;
-
   server.tool(
     "lido_list_votes",
     "List recent Lido DAO governance votes. Can filter by status (open, executed, all).",
@@ -72,11 +69,15 @@ export function registerListVotes(server: McpServer, provider: Provider): void {
         .enum(["all", "open", "executed"])
         .default("all")
         .describe("Filter votes by status"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { count: number; status: "all" | "open" | "executed" }) => {
+    async (args: { count: number; status: "all" | "open" | "executed"; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const votingAddress = contracts.voting;
+        const client = getClient(provider, args.chain_id);
         // Get total number of votes
-        const totalVotes = (await provider.publicClient.readContract({
+        const totalVotes = (await client.readContract({
           address: votingAddress,
           abi: votingAbi,
           functionName: "votesLength",
@@ -110,7 +111,7 @@ export function registerListVotes(server: McpServer, provider: Provider): void {
           args: [BigInt(id)],
         }));
 
-        const results = await provider.publicClient.multicall({
+        const results = await client.multicall({
           contracts: multicallContracts,
         });
 

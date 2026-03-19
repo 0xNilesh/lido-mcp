@@ -46,6 +46,7 @@ import { register as registerApproveNft } from "./tools/approve-nft/index.js";
 import { register as registerRevokeApprovals } from "./tools/revoke-approvals/index.js";
 import { register as registerIncreaseAllowance } from "./tools/increase-allowance/index.js";
 import { register as registerPrepare } from "./tools/prepare/index.js";
+import { register as registerSummary } from "./tools/summary/index.js";
 
 // ---------------------------------------------------------------------------
 // Skill file loader
@@ -143,6 +144,7 @@ export async function createServer(): Promise<{
   registerRevokeApprovals(server, provider);
   registerIncreaseAllowance(server, provider);
   registerPrepare(server, provider);
+  registerSummary(server, provider);
 
   return { server, provider };
 }

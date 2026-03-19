@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Tool } from '../types';
+import { apiUrl } from '../api';
 import { useContractExecutor, isWriteTool } from '../hooks/useContractExecutor';
 
 interface HistoryEntry {
@@ -93,7 +94,7 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
   const inputRef = useRef<HTMLInputElement>(null);
   const nextId = useRef(2);
 
-  // Show welcome message with wallet info
+  // Show/update welcome message with wallet + chain info
   useEffect(() => {
     const walletInfo = walletAddress
       ? `Wallet: ${walletAddress.substring(0, 6)}...${walletAddress.substring(38)}`
@@ -101,8 +102,12 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
     const chainInfo = chainName ? `Network: ${chainName} (${chainId})` : '';
     const welcome = `Connected to Lido MCP Server\n${chainInfo} | ${walletInfo}\n\nType a tool name to get started. Parameters will be prompted.\nType "help" for commands, "tools" for tool list, "clear" to reset.\n`;
     setHistory(prev => {
-      if (prev.length <= 1) return [...prev, { id: 1, type: 'system' as const, text: welcome, timestamp: Date.now() }];
-      return prev;
+      // Replace the welcome message (id=1) if it exists, otherwise append
+      const hasWelcome = prev.some(e => e.id === 1);
+      if (hasWelcome) {
+        return prev.map(e => e.id === 1 ? { ...e, text: welcome, timestamp: Date.now() } : e);
+      }
+      return [...prev, { id: 1, type: 'system' as const, text: welcome, timestamp: Date.now() }];
     });
   }, [walletAddress, chainId, chainName]);
 
@@ -127,6 +132,10 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
   const { execute: executeViaWallet, isReady: walletReady } = useContractExecutor();
 
   const callTool = useCallback(async (toolName: string, args: Record<string, unknown>) => {
+    // Auto-inject chain_id from connected wallet
+    if (chainId && !args.chain_id) {
+      args.chain_id = chainId;
+    }
     // Auto-inject wallet address for address params if wallet connected and not provided
     if (walletAddress && !args.address) {
       const tool = tools.find(t => t.name === toolName);
@@ -152,7 +161,7 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
       }
 
       // Read tools go through MCP proxy
-      const response = await fetch('/api/call', {
+      const response = await fetch(apiUrl('/api/call'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: toolName, args }),
@@ -363,7 +372,7 @@ Tips:
     addEntry('command', trimmed);
     setLoading(true);
     try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
+      const res = await fetch(apiUrl(`/api/search?q=${encodeURIComponent(trimmed)}`));
       const data = await res.json();
 
       if (data.best && data.best.score > 0.25) {

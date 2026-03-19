@@ -6,7 +6,8 @@ import { wstethAbi } from "../../abis/wsteth.js";
 import { erc20Abi } from "../../abis/erc20.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   getWalletAddress,
   formatTokenAmount,
   extractErrorMessage,
@@ -37,9 +38,6 @@ function getTokenContract(
 // ---------------------------------------------------------------------------
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   // ---- lido_get_allowance ----
   server.tool(
     "lido_get_allowance",
@@ -57,9 +55,13 @@ export function register(server: McpServer, provider: Provider): void {
         .describe(
           "Owner address to query (defaults to connected wallet address)",
         ),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { token: "stETH" | "wstETH" | "LDO"; spender: string; address?: string }) => {
+    async (args: { token: "stETH" | "wstETH" | "LDO"; spender: string; address?: string; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -70,7 +72,7 @@ export function register(server: McpServer, provider: Provider): void {
         const { address: tokenAddress, abi } = getTokenContract(args.token, contracts);
         const spender = args.spender as `0x${string}`;
 
-        const allowance = (await provider.publicClient.readContract({
+        const allowance = (await client.readContract({
           address: tokenAddress,
           abi,
           functionName: "allowance",
@@ -105,9 +107,13 @@ export function register(server: McpServer, provider: Provider): void {
         .describe(
           "Owner address to query (defaults to connected wallet address)",
         ),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { address?: string }) => {
+    async (args: { address?: string; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -115,7 +121,7 @@ export function register(server: McpServer, provider: Provider): void {
           );
         }
 
-        const results = await provider.publicClient.multicall({
+        const results = await client.multicall({
           contracts: [
             {
               address: contracts.lido,

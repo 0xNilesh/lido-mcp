@@ -4,7 +4,8 @@ import { success, error } from "../../utils/format.js";
 import { votingAbi } from "../../abis/voting.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   extractErrorMessage,
 } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -59,21 +60,21 @@ type VoteData = [
 // ---------------------------------------------------------------------------
 
 export function registerGetVote(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-  const votingAddress = contracts.voting;
-
   server.tool(
     "lido_get_vote",
     "Get detailed information about a specific Lido DAO governance vote, including tallies, phase, and the connected wallet's voter state.",
     {
       vote_id: z.number().int().nonnegative().describe("The vote ID to query"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { vote_id: number }) => {
+    async (args: { vote_id: number; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const votingAddress = contracts.voting;
+        const client = getClient(provider, args.chain_id);
         const voteId = BigInt(args.vote_id);
 
-        const voteData = (await provider.publicClient.readContract({
+        const voteData = (await client.readContract({
           address: votingAddress,
           abi: votingAbi,
           functionName: "getVote",
@@ -142,13 +143,13 @@ export function registerGetVote(server: McpServer, provider: Provider): void {
         if (provider.account) {
           try {
             const [voterState, userCanVote] = await Promise.all([
-              provider.publicClient.readContract({
+              client.readContract({
                 address: votingAddress,
                 abi: votingAbi,
                 functionName: "getVoterState",
                 args: [voteId, provider.account.address],
               }) as Promise<number>,
-              provider.publicClient.readContract({
+              client.readContract({
                 address: votingAddress,
                 abi: votingAbi,
                 functionName: "canVote",

@@ -10,6 +10,7 @@
 import { useCallback } from 'react';
 import { usePublicClient, useWalletClient } from 'wagmi';
 import { type Hex } from 'viem';
+import { apiUrl } from '../api';
 
 // Map tool names to prepare action names
 const TOOL_TO_ACTION: Record<string, string> = {
@@ -61,7 +62,7 @@ export function useContractExecutor() {
 
     // If dry_run, use MCP's prepare tool to show what would happen (no execution)
     if (isDryRun) {
-      const prepRes = await fetch('/api/call', {
+      const prepRes = await fetch(apiUrl('/api/call'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -86,7 +87,7 @@ export function useContractExecutor() {
     }
 
     // For real execution: ask MCP to prepare the tx, then sign via wallet
-    const prepareRes = await fetch('/api/call', {
+    const prepareRes = await fetch(apiUrl('/api/call'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

@@ -5,7 +5,8 @@ import { lidoAbi } from "../../abis/lido.js";
 import { wstethAbi } from "../../abis/wsteth.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   getWalletAddress,
   formatTokenAmount,
   extractErrorMessage,
@@ -25,9 +26,6 @@ const DEFAULT_APR_BPS = 350; // 3.50%
 // ---------------------------------------------------------------------------
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_rewards",
     "Get staking rewards information for a Lido stETH holder, including current balance, share rate, estimated APR, and projected rewards.",
@@ -38,9 +36,14 @@ export function register(server: McpServer, provider: Provider): void {
         .describe(
           "Ethereum address to check rewards for. Defaults to the configured wallet.",
         ),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { address?: string }) => {
+    async (args: { address?: string; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
+
         const walletAddress = getWalletAddress(provider, args.address);
         if (!walletAddress) {
           return error(
@@ -49,7 +52,7 @@ export function register(server: McpServer, provider: Provider): void {
         }
 
         // Multicall to fetch all needed data in one round trip
-        const results = await provider.publicClient.multicall({
+        const results = await client.multicall({
           contracts: [
             {
               address: contracts.lido,

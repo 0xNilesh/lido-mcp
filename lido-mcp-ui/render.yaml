@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: lido-mcp-proxy
+    runtime: node
+    plan: free
+    buildCommand: |
+      cd ../lido-mcp && npm install && npm run build &&
+      cd ../lido-mcp-ui && npm install
+    startCommand: npx tsx server/proxy.ts
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: ETHEREUM_RPC_URL
+        value: https://hoodi.drpc.org
+      - key: CHAIN_ID
+        value: "560048"
+      - key: PRIVATE_KEY
+        value: ""

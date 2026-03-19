@@ -5,7 +5,8 @@ import { writeMutex } from "../../utils/mutex.js";
 import { wstethAbi } from "../../abis/wsteth.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   formatTokenAmount,
@@ -19,21 +20,21 @@ import type { Provider } from "../../provider.js";
 // ---------------------------------------------------------------------------
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_stake_and_wrap",
-    "Stake ETH and wrap into wstETH in a single transaction by sending ETH to the wstETH contract",
+    "Stake ETH and wrap into wstETH in a single transaction by sending ETH to the wstETH contract. Note: chain_id affects contract address lookup; wallet stays on default chain.",
     {
       amount: z.string().describe('Amount of ETH to stake and wrap (e.g. "1.5")'),
       dry_run: z
         .boolean()
         .default(true)
         .describe("If true, simulate without executing (default: true)"),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { amount: string; dry_run: boolean }) => {
+    async (args: { amount: string; dry_run: boolean; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
         const walletAddress = account.address;
 
@@ -44,8 +45,8 @@ export function register(server: McpServer, provider: Provider): void {
 
         // Fetch ETH balance and expected wstETH amount in parallel
         const [ethBalance, expectedWsteth] = await Promise.all([
-          provider.publicClient.getBalance({ address: walletAddress }),
-          provider.publicClient.readContract({
+          client.getBalance({ address: walletAddress }),
+          client.readContract({
             address: contracts.wsteth,
             abi: wstethAbi,
             functionName: "getWstETHByStETH",
@@ -61,14 +62,14 @@ export function register(server: McpServer, provider: Provider): void {
 
         // ---- Dry run (simulation) ----
         if (args.dry_run) {
-          const gasEstimate = await provider.publicClient.estimateGas({
+          const gasEstimate = await client.estimateGas({
             to: contracts.wsteth,
             value: amountWei,
             data: "0x" as `0x${string}`,
             account,
           });
 
-          const gasPrice = await provider.publicClient.getGasPrice();
+          const gasPrice = await client.getGasPrice();
           const estimatedFee = BigInt(gasEstimate) * BigInt(gasPrice);
 
           return success({
@@ -90,9 +91,9 @@ export function register(server: McpServer, provider: Provider): void {
             to: contracts.wsteth,
             value: amountWei,
             data: "0x" as `0x${string}`,
-          });
+          } as any);
 
-          const receipt = await provider.publicClient.waitForTransactionReceipt({
+          const receipt = await client.waitForTransactionReceipt({
             hash: txHash,
             confirmations: 1,
           });

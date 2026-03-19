@@ -4,7 +4,8 @@ import { success, error } from "../../utils/format.js";
 import { withdrawalQueueAbi } from "../../abis/withdrawal-queue.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   getWalletAddress,
   formatTokenAmount,
   extractErrorMessage,
@@ -30,9 +31,6 @@ interface WithdrawalStatus {
 // ---------------------------------------------------------------------------
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_withdrawal_status",
     "Get the status of Lido withdrawal requests. Either provide specific request IDs or an address to look up all requests for that address.",
@@ -47,9 +45,13 @@ export function register(server: McpServer, provider: Provider): void {
         .describe(
           "Ethereum address to look up withdrawal requests for. Defaults to the configured wallet.",
         ),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { request_ids?: string[]; address?: string }) => {
+    async (args: { request_ids?: string[]; address?: string; chain_id?: number }) => {
       try {
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
         const walletAddress = getWalletAddress(provider, args.address);
 
         let requestIds: bigint[];
@@ -58,7 +60,7 @@ export function register(server: McpServer, provider: Provider): void {
           requestIds = args.request_ids.map((id) => BigInt(id));
         } else if (walletAddress) {
           // Fetch all request IDs for the address
-          requestIds = (await provider.publicClient.readContract({
+          requestIds = (await client.readContract({
             address: contracts.withdrawalQueue,
             abi: withdrawalQueueAbi,
             functionName: "getWithdrawalRequests",
@@ -81,7 +83,7 @@ export function register(server: McpServer, provider: Provider): void {
         }
 
         // Fetch withdrawal statuses
-        const statuses = (await provider.publicClient.readContract({
+        const statuses = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: withdrawalQueueAbi,
           functionName: "getWithdrawalStatus",
@@ -89,14 +91,14 @@ export function register(server: McpServer, provider: Provider): void {
         })) as WithdrawalStatus[];
 
         // Check bunker mode
-        const isBunkerMode = (await provider.publicClient.readContract({
+        const isBunkerMode = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: withdrawalQueueAbi,
           functionName: "isBunkerModeActive",
         })) as boolean;
 
         // Get last finalized request ID for context
-        const lastFinalizedId = (await provider.publicClient.readContract({
+        const lastFinalizedId = (await client.readContract({
           address: contracts.withdrawalQueue,
           abi: withdrawalQueueAbi,
           functionName: "getLastFinalizedRequestId",
@@ -116,20 +118,20 @@ export function register(server: McpServer, provider: Provider): void {
         let claimableAmounts: bigint[] = [];
         if (finalizedUnclaimedIds.length > 0) {
           try {
-            const lastCheckpointIndex = (await provider.publicClient.readContract({
+            const lastCheckpointIndex = (await client.readContract({
               address: contracts.withdrawalQueue,
               abi: withdrawalQueueAbi,
               functionName: "getLastCheckpointIndex",
             })) as bigint;
 
-            const hints = (await provider.publicClient.readContract({
+            const hints = (await client.readContract({
               address: contracts.withdrawalQueue,
               abi: withdrawalQueueAbi,
               functionName: "findCheckpointHints",
               args: [finalizedUnclaimedIds, 1n, lastCheckpointIndex],
             })) as bigint[];
 
-            claimableAmounts = (await provider.publicClient.readContract({
+            claimableAmounts = (await client.readContract({
               address: contracts.withdrawalQueue,
               abi: withdrawalQueueAbi,
               functionName: "getClaimableEther",

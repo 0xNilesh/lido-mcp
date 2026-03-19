@@ -4,7 +4,8 @@ import { success, error } from "../../utils/format.js";
 import { writeMutex } from "../../utils/mutex.js";
 import { getContracts } from "../../contracts.js";
 import {
-  getChainId,
+  resolveChainId,
+  getClient,
   requireWallet,
   WalletRequiredError,
   extractErrorMessage,
@@ -26,9 +27,6 @@ const approveAbi = [
 ] as const;
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_revoke_all_approvals",
     "Revoke all common Lido token approvals (stETH for wstETH contract, stETH for WithdrawalQueue, wstETH for WithdrawalQueue) by setting them to 0",
@@ -37,9 +35,12 @@ export function register(server: McpServer, provider: Provider): void {
         .boolean()
         .default(true)
         .describe("If true, simulate without executing (default: true)"),
+      chain_id: z.number().optional().describe('Chain ID (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain. Note: affects contract address lookup; wallet client stays on default chain.'),
     },
-    async (args: { dry_run: boolean }) => {
+    async (args: { dry_run: boolean; chain_id?: number }) => {
       try {
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
         const { account, walletClient } = requireWallet(provider);
 
         const revocations = [
@@ -52,7 +53,7 @@ export function register(server: McpServer, provider: Provider): void {
           const simResults: Array<{ label: string; gas_estimate: string }> = [];
           for (const rev of revocations) {
             try {
-              const { request } = await provider.publicClient.simulateContract({
+              const { request } = await client.simulateContract({
                 address: rev.address,
                 abi: approveAbi,
                 functionName: "approve",
@@ -60,9 +61,9 @@ export function register(server: McpServer, provider: Provider): void {
                 account,
               });
 
-              const gasEstimate = await provider.publicClient.estimateGas({
+              const gasEstimate = await client.estimateGas({
                 to: rev.address,
-                data: request.data,
+                data: (request as any).data,
                 account,
               });
 
@@ -86,7 +87,7 @@ export function register(server: McpServer, provider: Provider): void {
 
           for (const rev of revocations) {
             try {
-              const { request } = await provider.publicClient.simulateContract({
+              const { request } = await client.simulateContract({
                 address: rev.address,
                 abi: approveAbi,
                 functionName: "approve",
@@ -94,8 +95,8 @@ export function register(server: McpServer, provider: Provider): void {
                 account,
               });
 
-              const txHash = await walletClient.writeContract(request);
-              const receipt = await provider.publicClient.waitForTransactionReceipt({
+              const txHash = await walletClient.writeContract(request as any);
+              const receipt = await client.waitForTransactionReceipt({
                 hash: txHash,
                 confirmations: 1,
               });

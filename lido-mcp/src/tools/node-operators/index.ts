@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { success, error } from "../../utils/format.js";
 import { getContracts } from "../../contracts.js";
-import { getChainId, extractErrorMessage } from "../../utils/helpers.js";
+import { resolveChainId, getClient, extractErrorMessage } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Provider } from "../../provider.js";
 
@@ -41,9 +41,6 @@ const nodeOperatorsAbi = [
 ] as const;
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const contracts = getContracts(chainId);
-
   server.tool(
     "lido_get_node_operators",
     "Get node operator count and optionally details for a specific operator by ID",
@@ -52,10 +49,14 @@ export function register(server: McpServer, provider: Provider): void {
         .string()
         .optional()
         .describe("Optional operator ID to get details for a specific operator"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { operator_id?: string }) => {
+    async (args: { operator_id?: string; chain_id?: number }) => {
       try {
-        const results = await provider.publicClient.multicall({
+        const chainId = resolveChainId(provider, args.chain_id);
+        const contracts = getContracts(chainId);
+        const client = getClient(provider, args.chain_id);
+        const results = await client.multicall({
           contracts: [
             {
               address: contracts.nodeOperatorsRegistry,
@@ -81,7 +82,7 @@ export function register(server: McpServer, provider: Provider): void {
 
         if (args.operator_id !== undefined) {
           try {
-            const opData = (await provider.publicClient.readContract({
+            const opData = (await client.readContract({
               address: contracts.nodeOperatorsRegistry,
               abi: nodeOperatorsAbi,
               functionName: "getNodeOperator",
@@ -119,10 +120,13 @@ export function register(server: McpServer, provider: Provider): void {
     "Get detailed information for a specific node operator by ID",
     {
       operator_id: z.number().describe("The node operator ID to query"),
+      chain_id: z.number().optional().describe('Chain ID to query (1=mainnet, 17000=holesky, 560048=hoodi). Defaults to server chain.'),
     },
-    async (args: { operator_id: number }) => {
+    async (args: { operator_id: number; chain_id?: number }) => {
       try {
-        const opData = (await provider.publicClient.readContract({
+        const contracts = getContracts(resolveChainId(provider, args.chain_id));
+        const client = getClient(provider, args.chain_id);
+        const opData = (await client.readContract({
           address: contracts.nodeOperatorsRegistry,
           abi: nodeOperatorsAbi,
           functionName: "getNodeOperator",

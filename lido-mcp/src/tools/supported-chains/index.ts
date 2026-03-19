@@ -1,18 +1,17 @@
 import { success } from "../../utils/format.js";
 import { L2_WSTETH } from "../../contracts.js";
-import { getChainId } from "../../utils/helpers.js";
+import { resolveChainId } from "../../utils/helpers.js";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Provider } from "../../provider.js";
 
 export function register(server: McpServer, provider: Provider): void {
-  const chainId = getChainId(provider);
-  const chainName = chainId === 1 ? "Ethereum Mainnet" : chainId === 560048 ? "Hoodi Testnet" : "Holesky Testnet";
-
   server.tool(
     "lido_get_supported_chains",
     "List all supported chains for Lido (current L1 and all L2s with wstETH bridges)",
     {},
     async () => {
+      const chainId = resolveChainId(provider);
+      const chainName = chainId === 1 ? "Ethereum Mainnet" : chainId === 560048 ? "Hoodi Testnet" : "Holesky Testnet";
       const l2Chains = Object.entries(L2_WSTETH).map(([name, info]) => ({
         name,
         chain_id: info.chainId,
