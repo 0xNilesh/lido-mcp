@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Tool } from '../types';
+import { useContractExecutor, isWriteTool } from '../hooks/useContractExecutor';
 
 interface HistoryEntry {
   id: number;
@@ -123,6 +124,8 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
     setHistory(prev => [...prev, { id: nextId.current++, type, text, timestamp: Date.now() }]);
   }, []);
 
+  const { execute: executeViaWallet, isReady: walletReady } = useContractExecutor();
+
   const callTool = useCallback(async (toolName: string, args: Record<string, unknown>) => {
     // Auto-inject wallet address for address params if wallet connected and not provided
     if (walletAddress && !args.address) {
@@ -134,6 +137,21 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
 
     setLoading(true);
     try {
+      // Route write tools through connected wallet, reads through MCP proxy
+      if (isWriteTool(toolName)) {
+        if (!walletReady) {
+          addEntry('error', 'Wallet not connected. Connect your wallet to execute write operations.');
+          return;
+        }
+        addEntry('system', `  Executing via connected wallet...`);
+        const result = await executeViaWallet(toolName, args as Record<string, any>);
+        const output: any = { ...result.result };
+        if (result.tx_hash) output.tx_hash = result.tx_hash;
+        addEntry('result', JSON.stringify(output, null, 2));
+        return;
+      }
+
+      // Read tools go through MCP proxy
       const response = await fetch('/api/call', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -165,7 +183,7 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
     } finally {
       setLoading(false);
     }
-  }, [tools, walletAddress, addEntry]);
+  }, [tools, walletAddress, walletReady, executeViaWallet, addEntry]);
 
   const startParamPrompt = useCallback((toolName: string, tool: Tool) => {
     const params = extractParams(tool);
