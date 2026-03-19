@@ -18,7 +18,7 @@ export function register(server: McpServer, provider: Provider): void {
   const contracts = getContracts(chainId);
 
   server.tool(
-    "lido_claim_withdrawal",
+    "lido_claim_single_withdrawal",
     "Claim a single finalized withdrawal request by its request ID (no hints needed)",
     {
       request_id: z.string().describe("The withdrawal request ID to claim"),

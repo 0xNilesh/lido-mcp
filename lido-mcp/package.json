@@ -22,6 +22,7 @@
     "lido.skill.md"
   ],
   "dependencies": {
+    "@huggingface/inference": "^4.13.15",
     "@lidofinance/lido-ethereum-sdk": "^4.0.0",
     "@modelcontextprotocol/sdk": "^1.12.0",
     "viem": "^2.0.0",

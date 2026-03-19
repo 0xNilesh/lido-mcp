@@ -16,6 +16,11 @@ const hoodi: Chain = {
   rpcUrls: {
     default: { http: ["https://hoodi.drpc.org"] },
   },
+  contracts: {
+    multicall3: {
+      address: "0xcA11bde05977b3631167028862bE2a173976CA11",
+    },
+  },
   testnet: true,
 };
 

@@ -248,7 +248,7 @@ export default function Terminal({ tools, pendingCommand, onCommandConsumed, wal
     }
   }, [paramState, addEntry, callTool]);
 
-  const executeCommand = useCallback((raw: string) => {
+  const executeCommand = useCallback(async (raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed && !paramState) return;
 
@@ -334,15 +334,42 @@ Tips:
       }
     }
 
-    // Tool name only — start interactive param prompts
+    // Exact tool name match
     const tool = tools.find(t => t.name === trimmed);
-    if (!tool) {
-      addEntry('command', trimmed);
-      addEntry('error', `Unknown command: "${trimmed}"\nType "help" for available commands.`);
+    if (tool) {
+      startParamPrompt(trimmed, tool);
       return;
     }
 
-    startParamPrompt(trimmed, tool);
+    // Natural language query — semantic search via HuggingFace embeddings
+    addEntry('command', trimmed);
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+
+      if (data.best && data.best.score > 0.25) {
+        const matchedTool = tools.find(t => t.name === data.best.name);
+        const method = data.method === 'semantic' ? `AI semantic match (${data.model})` : 'keyword match';
+        const topMatches = (data.matches || []).slice(0, 3)
+          .map((m: any, i: number) => `  ${i + 1}. ${m.name} (${(m.score * 100).toFixed(1)}%)`)
+          .join('\n');
+
+        addEntry('system', `  ${method}\n  Best match: ${data.best.name} (${(data.best.score * 100).toFixed(1)}% confidence)\n\n  Top matches:\n${topMatches}`);
+
+        if (matchedTool) {
+          setLoading(false);
+          startParamPrompt(matchedTool.name, matchedTool);
+          return;
+        }
+      }
+
+      addEntry('error', `No matching tool found for: "${trimmed}"\n\nTry:\n  • Use exact tool names (e.g., lido_get_balance)\n  • Ask naturally: "what is my balance?" or "stake 1 ETH"\n  • Type "tools" to see all available tools`);
+    } catch {
+      addEntry('error', 'Semantic search failed. Use exact tool names instead.');
+    } finally {
+      setLoading(false);
+    }
   }, [tools, paramState, walletAddress, chainId, chainName, addEntry, callTool, handleParamInput, startParamPrompt]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -406,7 +433,7 @@ Tips:
           placeholder={
             loading ? 'Processing...' :
             paramState ? `Enter ${paramState.current?.name}...` :
-            'Enter tool name...'
+            'Ask a question or enter a tool name...'
           }
           disabled={loading}
           autoFocus
@@ -417,3 +444,5 @@ Tips:
     </div>
   );
 }
+
+// Semantic search is handled server-side via HuggingFace embeddings (see server/proxy.ts)
