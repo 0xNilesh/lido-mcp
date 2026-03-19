@@ -136,6 +136,16 @@ export const withdrawalQueueAbi = [
     outputs: [],
   },
   {
+    name: "requestWithdrawals",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_amounts", type: "uint256[]" },
+      { name: "_owner", type: "address" },
+    ],
+    outputs: [{ name: "requestIds", type: "uint256[]" }],
+  },
+  {
     name: "requestWithdrawalsWstETH",
     type: "function",
     stateMutability: "nonpayable",
