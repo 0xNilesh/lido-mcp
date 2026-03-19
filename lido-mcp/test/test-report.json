@@ -1,256 +1,474 @@
 {
-  "timestamp": "2026-03-19T02:30:33.532Z",
-  "network": "Hoodi Testnet (560048)",
+  "timestamp": "2026-03-19T03:13:03.847Z",
+  "chain_id": 560048,
   "wallet": "0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4",
   "summary": {
-    "total": 34,
-    "passed": 33,
-    "failed": 1,
-    "skipped": 0
+    "total": 65,
+    "passed": 65,
+    "failed": 0,
+    "skipped": 0,
+    "pass_rate": "100.0%"
   },
   "results": [
     {
       "name": "Load config from .env",
-      "category": "setup",
+      "category": "Setup",
       "status": "PASS",
-      "duration_ms": 0,
-      "details": "RPC: https://hoodi.drpc.org, Chain: 560048, Key: yes"
+      "duration_ms": 1,
+      "details": "RPC=https://hoodi.drpc.org, chainId=560048"
     },
     {
-      "name": "Create provider (viem + LidoSDK)",
-      "category": "setup",
+      "name": "Create provider (publicClient + walletClient)",
+      "category": "Setup",
       "status": "PASS",
-      "duration_ms": 35,
-      "details": "Wallet: 0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4, SDK initialized"
+      "duration_ms": 31,
+      "details": "wallet=0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4, chain=Hoodi"
     },
     {
-      "name": "Verify RPC connectivity",
-      "category": "setup",
+      "name": "Verify RPC connectivity (getBlockNumber)",
+      "category": "Setup",
       "status": "PASS",
-      "duration_ms": 628,
-      "details": "Block: 2444803, Chain ID: 560048"
+      "duration_ms": 440,
+      "details": "blockNumber=2444993"
     },
     {
-      "name": "Verify wallet ETH balance",
-      "category": "setup",
+      "name": "Verify wallet ETH balance > 0",
+      "category": "Setup",
       "status": "PASS",
-      "duration_ms": 459,
-      "details": "Balance: 99.967939569778639664 ETH"
+      "duration_ms": 352,
+      "details": "balance=99.957427648433100244 ETH"
     },
     {
-      "name": "Read stETH totalPooledEther",
-      "category": "read",
+      "name": "getTotalPooledEther",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 414,
-      "details": "Total pooled: 2056455.658940729144862007 ETH"
+      "duration_ms": 261,
+      "details": "2056455.668940729144862007 ETH"
     },
     {
-      "name": "Read stETH totalShares",
-      "category": "read",
+      "name": "getTotalShares",
+      "category": "Protocol Read",
+      "status": "PASS",
+      "duration_ms": 318,
+      "details": "2013995.87311507112752201 ETH"
+    },
+    {
+      "name": "getCurrentStakeLimit",
+      "category": "Protocol Read",
+      "status": "PASS",
+      "duration_ms": 348,
+      "details": "3000 ETH"
+    },
+    {
+      "name": "isStakingPaused",
+      "category": "Protocol Read",
+      "status": "PASS",
+      "duration_ms": 404,
+      "details": "paused=false"
+    },
+    {
+      "name": "getDepositableEther",
+      "category": "Protocol Read",
       "status": "PASS",
       "duration_ms": 409,
-      "details": "Total shares: 2013995863321541884304863"
+      "details": "28.639822795592532054 ETH"
     },
     {
-      "name": "Read getCurrentStakeLimit",
-      "category": "read",
+      "name": "getBeaconStat (3 values)",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 277,
-      "details": "Stake limit: 3000 ETH"
+      "duration_ms": 374,
+      "details": "depositedValidators=72502, beaconValidators=72502, beaconBalance=2055798.242551182 ETH"
     },
     {
-      "name": "Read stETH balance of wallet",
-      "category": "read",
+      "name": "getFee",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 316,
-      "details": "stETH balance: 0.018656249999999999"
+      "duration_ms": 380,
+      "details": "feeBasisPoints=999 (9.99%)"
     },
     {
-      "name": "Read wstETH balance of wallet",
-      "category": "read",
+      "name": "getBufferedEther",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 370,
-      "details": "wstETH balance: 0.008171475962309306"
+      "duration_ms": 279,
+      "details": "28.643822795592532054 ETH"
     },
     {
-      "name": "Read wstETH stEthPerToken exchange rate",
-      "category": "read",
+      "name": "getExternalEther",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 339,
-      "details": "1 wstETH = 1.021082364861048573 stETH"
+      "duration_ms": 363,
+      "details": "628.782566751552329953 ETH"
     },
     {
-      "name": "Read sharesOf wallet",
-      "category": "read",
+      "name": "getExternalShares",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 494,
-      "details": "Shares: 18271052994376990"
+      "duration_ms": 410,
+      "details": "615.800045510646562391 ETH"
     },
     {
-      "name": "Read LDO balance of wallet",
-      "category": "read",
+      "name": "getMaxExternalRatioBP",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 417,
-      "details": "LDO balance: 0"
+      "duration_ms": 445,
+      "details": "ratioBP=3000"
     },
     {
-      "name": "Read withdrawal queue - isBunkerModeActive",
-      "category": "read",
+      "name": "totalSupply",
+      "category": "Protocol Read",
       "status": "PASS",
-      "duration_ms": 317,
-      "details": "Bunker mode: false"
+      "duration_ms": 410,
+      "details": "2056455.668940729144862007 ETH"
     },
     {
-      "name": "Read withdrawal queue - getLastFinalizedRequestId",
-      "category": "read",
+      "name": "stETH name/symbol/decimals",
+      "category": "Token Read",
       "status": "PASS",
-      "duration_ms": 306,
-      "details": "Last finalized request ID: 3531"
+      "duration_ms": 539,
+      "details": "name=\"Liquid staked Ether 2.0\", symbol=\"stETH\", decimals=18"
     },
     {
-      "name": "Read Aragon Voting - votesLength",
-      "category": "read",
+      "name": "wstETH name/symbol/decimals",
+      "category": "Token Read",
       "status": "PASS",
-      "duration_ms": 334,
-      "details": "Total votes: 61"
+      "duration_ms": 357,
+      "details": "name=\"Wrapped liquid staked Ether 2.0\", decimals=18"
     },
     {
-      "name": "Share conversion: getSharesByPooledEth(1 ETH)",
-      "category": "read",
+      "name": "LDO name/symbol/decimals/totalSupply",
+      "category": "Token Read",
+      "status": "PASS",
+      "duration_ms": 558,
+      "details": "name=\"TEST Lido DAO Token\", symbol=\"TLDO\", decimals=18, totalSupply=1000000"
+    },
+    {
+      "name": "wstETH stEthPerToken",
+      "category": "Token Read",
+      "status": "PASS",
+      "duration_ms": 388,
+      "details": "1.021082364861048573 ETH"
+    },
+    {
+      "name": "wstETH tokensPerStEth",
+      "category": "Token Read",
+      "status": "PASS",
+      "duration_ms": 380,
+      "details": "0.979352924321714718 ETH"
+    },
+    {
+      "name": "wstETH totalSupply",
+      "category": "Token Read",
+      "status": "PASS",
+      "duration_ms": 315,
+      "details": "2418.921659966606781127 ETH"
+    },
+    {
+      "name": "stETH symbol via ERC20 ABI",
+      "category": "Token Read",
+      "status": "PASS",
+      "duration_ms": 331,
+      "details": "symbol=\"stETH\""
+    },
+    {
+      "name": "LDO totalSupply via ERC20 ABI",
+      "category": "Token Read",
       "status": "PASS",
       "duration_ms": 411,
-      "details": "1 ETH = 979352924321714718 shares"
+      "details": "1000000"
     },
     {
-      "name": "Share conversion: getPooledEthByShares(1e18 shares)",
-      "category": "read",
+      "name": "ETH balance",
+      "category": "Balance",
       "status": "PASS",
-      "duration_ms": 329,
-      "details": "1e18 shares = 1.021082364861048573 ETH"
+      "duration_ms": 370,
+      "details": "99.957427648433100244 ETH"
     },
     {
-      "name": "wstETH conversion: getWstETHByStETH(1 stETH)",
-      "category": "read",
-      "status": "PASS",
-      "duration_ms": 324,
-      "details": "1 stETH = 0.979352924321714718 wstETH"
-    },
-    {
-      "name": "wstETH conversion: getStETHByWstETH(1 wstETH)",
-      "category": "read",
-      "status": "PASS",
-      "duration_ms": 376,
-      "details": "1 wstETH = 1.021082364861048573 stETH"
-    },
-    {
-      "name": "Simulate stake 0.01 ETH",
-      "category": "dry_run",
-      "status": "PASS",
-      "duration_ms": 3086,
-      "details": "Simulation SUCCESS. Estimated gas: 87476"
-    },
-    {
-      "name": "Simulate wrap stETH (check allowance flow)",
-      "category": "dry_run",
-      "status": "PASS",
-      "duration_ms": 1118,
-      "details": "stETH balance: 0.018656249999999999, allowance to wstETH: 0.0113125"
-    },
-    {
-      "name": "STAKE: Submit 0.01 ETH to Lido",
-      "category": "write",
-      "status": "PASS",
-      "duration_ms": 12583,
-      "details": "Staked 0.01 ETH. Gas used: 76754. Status: success",
-      "tx_hash": "0x7790e9e19a8ab3783f3202d595cd642906139f7178aff8565a90765d137914f0"
-    },
-    {
-      "name": "VERIFY: stETH balance after stake",
-      "category": "write",
-      "status": "PASS",
-      "duration_ms": 406,
-      "details": "stETH balance: 0.028656249999999999"
-    },
-    {
-      "name": "APPROVE: stETH for wstETH wrap",
-      "category": "write",
-      "status": "PASS",
-      "duration_ms": 11986,
-      "details": "Approved 0.028656249999999999 stETH. Status: success",
-      "tx_hash": "0x0f5d5b0a87c7d508f4daef6289600699e7ec94aa3406e1c65c7b52e0105f76c7"
-    },
-    {
-      "name": "WRAP: Wrap half of stETH to wstETH",
-      "category": "write",
-      "status": "FAIL",
-      "duration_ms": 16372,
-      "details": "",
-      "error": "HTTP request failed.\n\nStatus: 408\nURL: https://hoodi.drpc.org/\nRequest body: {\"method\":\"eth_call\",\"params\":[{\"data\":\"0xea598cb00000000000000000000000000000000000000000000000000032e75a90ec21ff\",\"from\":\"0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4\",\"to\":\"0x7E99eE3C66636DE415D2d7C880938F2f40f94De4\"},\"latest\"]}\n \nRaw Call Arguments:\n  from:  0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4\n  to:    0x7E99eE3C66636DE415D2d7C880938F2f40f94De4\n  data:  0xea598cb00000000000000000000000000000000000000000000000000032e75a90ec21ff\n \nContract Call:\n  address:   0x7E99eE3C66636DE415D2d7C880938F2f40f94De4\n  function:  wrap(uint256 _stETHAmount)\n  args:          (14328124999999999)\n  sender:    0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4\n\nDocs: https://viem.sh/docs/contract/simulateContract\nDetails: {\"message\":\"Request timeout on the free tier, please upgrade your tier to the paid one\",\"code\":30}\nVersion: viem@2.47.5"
-    },
-    {
-      "name": "VERIFY: wstETH balance after wrap",
-      "category": "write",
-      "status": "PASS",
-      "duration_ms": 3473,
-      "details": "wstETH balance: 0.008171475962309306"
-    },
-    {
-      "name": "UNWRAP: Unwrap half of wstETH back to stETH",
-      "category": "write",
-      "status": "PASS",
-      "duration_ms": 19884,
-      "details": "Unwrapped 0.004085737981154653 wstETH. Gas: 91206. Status: success",
-      "tx_hash": "0xf3908592cf226e222bd74aba86d04dc6f9cbd356b5c24fb8b69018221d39ee9c"
-    },
-    {
-      "name": "WITHDRAW REQUEST: Request withdrawal of small stETH amount",
-      "category": "write",
-      "status": "PASS",
-      "duration_ms": 23537,
-      "details": "Withdrawal requested for 0.001 stETH. Gas: 198459. Status: success",
-      "tx_hash": "0x4147948e6f4d7d5774d1c3cd8e919bc3f15a4394bdd58bfeddd6b4c76baf6df1"
-    },
-    {
-      "name": "WITHDRAW STATUS: Get withdrawal requests for wallet",
-      "category": "read",
+      "name": "stETH balanceOf",
+      "category": "Balance",
       "status": "PASS",
       "duration_ms": 355,
-      "details": "Pending withdrawal requests: 4. IDs: [3532, 3533, 3534, 3535]"
+      "details": "0.031828124999999998 ETH"
     },
     {
-      "name": "GOVERNANCE: Read votesLength",
-      "category": "read",
+      "name": "wstETH balanceOf",
+      "category": "Balance",
       "status": "PASS",
-      "duration_ms": 533,
-      "details": "Total votes on Hoodi: 61"
+      "duration_ms": 466,
+      "details": "0.004085737981154653 ETH"
     },
     {
-      "name": "GOVERNANCE: Read latest vote details",
-      "category": "read",
+      "name": "LDO balanceOf",
+      "category": "Balance",
       "status": "PASS",
-      "duration_ms": 358,
-      "details": "Vote #60: open=false, executed=true, yea=54999.999999999999999995, nay=0"
+      "duration_ms": 445,
+      "details": "0"
     },
     {
-      "name": "Final ETH balance",
-      "category": "final",
+      "name": "sharesOf",
+      "category": "Balance",
       "status": "PASS",
-      "duration_ms": 282,
-      "details": "ETH: 99.957427648433100244"
+      "duration_ms": 352,
+      "details": "shares=31170967294427075"
     },
     {
-      "name": "Final stETH balance",
-      "category": "final",
+      "name": "Share conversions (getSharesByPooledEth, getPooledEthByShares)",
+      "category": "Balance",
       "status": "PASS",
-      "duration_ms": 351,
-      "details": "stETH: 0.031828124999999998"
+      "duration_ms": 442,
+      "details": "1 ETH = 979352924321714718 shares, 1 share = 1.021082364861048573 ETH"
     },
     {
-      "name": "Final wstETH balance",
-      "category": "final",
+      "name": "getWstETHByStETH(1 ETH)",
+      "category": "Conversion",
       "status": "PASS",
-      "duration_ms": 284,
-      "details": "wstETH: 0.004085737981154653"
+      "duration_ms": 359,
+      "details": "1 stETH = 0.979352924321714718 ETH wstETH"
+    },
+    {
+      "name": "getStETHByWstETH(1 wstETH)",
+      "category": "Conversion",
+      "status": "PASS",
+      "duration_ms": 348,
+      "details": "1 wstETH = 1.021082364861048573 ETH stETH"
+    },
+    {
+      "name": "Share rate computation",
+      "category": "Conversion",
+      "status": "PASS",
+      "duration_ms": 317,
+      "details": "shareRate(e27)=1021082364861048573680272748, totalPooled=2056455.668940729144862007 ETH, totalShares=2013995873115071127522010"
+    },
+    {
+      "name": "Round-trip: ETH -> shares -> ETH",
+      "category": "Conversion",
+      "status": "PASS",
+      "duration_ms": 667,
+      "details": "1 ETH -> 979352924321714718 shares -> 0.999999999999999999 ETH (diff=1 wei)"
+    },
+    {
+      "name": "getLastRequestId",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 344,
+      "details": "lastRequestId=3535"
+    },
+    {
+      "name": "getLastFinalizedRequestId",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 356,
+      "details": "lastFinalizedRequestId=3531"
+    },
+    {
+      "name": "unfinalizedRequestNumber",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 355,
+      "details": "unfinalizedRequests=4"
+    },
+    {
+      "name": "unfinalizedStETH",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 450,
+      "details": "0.004 ETH"
+    },
+    {
+      "name": "getLockedEtherAmount",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 409,
+      "details": "4813.434604548077339637 ETH"
+    },
+    {
+      "name": "isBunkerModeActive",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 411,
+      "details": "bunkerMode=false"
+    },
+    {
+      "name": "bunkerModeSinceTimestamp",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 321,
+      "details": "timestamp=115792089237316195423570985008687907853269984665640564039457584007913129639935"
+    },
+    {
+      "name": "getWithdrawalRequests(wallet)",
+      "category": "Withdrawal Queue",
+      "status": "PASS",
+      "duration_ms": 323,
+      "details": "requests=4, ids=[3532,3533,3534,3535]"
+    },
+    {
+      "name": "votesLength",
+      "category": "Governance",
+      "status": "PASS",
+      "duration_ms": 434,
+      "details": "totalVotes=61, latestVoteId=60"
+    },
+    {
+      "name": "getVote(latest vote)",
+      "category": "Governance",
+      "status": "PASS",
+      "duration_ms": 321,
+      "details": "vote#60: open=false, executed=true, startDate=1770826056, yea=54999999999999999999995, nay=0, votingPower=1000000000000000000000000"
+    },
+    {
+      "name": "getVoterState(latest vote, wallet)",
+      "category": "Governance",
+      "status": "PASS",
+      "duration_ms": 442,
+      "details": "voterState=Absent"
+    },
+    {
+      "name": "canVote(latest vote, wallet)",
+      "category": "Governance",
+      "status": "PASS",
+      "duration_ms": 375,
+      "details": "canVote=false"
+    },
+    {
+      "name": "token() returns LDO address",
+      "category": "Governance",
+      "status": "PASS",
+      "duration_ms": 409,
+      "details": "token=0xEf2573966D009CcEA0Fc74451dee2193564198dc"
+    },
+    {
+      "name": "StakingRouter.getStakingModulesCount",
+      "category": "Infrastructure",
+      "status": "PASS",
+      "duration_ms": 313,
+      "details": "modulesCount=4"
+    },
+    {
+      "name": "NodeOperatorsRegistry.getNodeOperatorsCount",
+      "category": "Infrastructure",
+      "status": "PASS",
+      "duration_ms": 404,
+      "details": "nodeOperatorsCount=39"
+    },
+    {
+      "name": "NodeOperatorsRegistry.getActiveNodeOperatorsCount",
+      "category": "Infrastructure",
+      "status": "PASS",
+      "duration_ms": 446,
+      "details": "activeNodeOperatorsCount=39"
+    },
+    {
+      "name": "Voting.getDelegate(wallet)",
+      "category": "Infrastructure",
+      "status": "PASS",
+      "duration_ms": 409,
+      "details": "delegate=0x0000000000000000000000000000000000000000"
+    },
+    {
+      "name": "LidoLocator resolves addresses",
+      "category": "Contract Addresses",
+      "status": "PASS",
+      "duration_ms": 652,
+      "details": "lido=0x3508A952176b3c15387C97BE809eaffB1982176a, wstETH=0x7E99eE3C66636DE415D2d7C880938F2f40f94De4, stakingRouter=0xCc820558B39ee15C7C45B59390B503b83fb499A8, withdrawalQueue=0xfe56573178f1bcdf53F01A6E9977670dcBBD9186"
+    },
+    {
+      "name": "All known contract addresses have code deployed",
+      "category": "Contract Addresses",
+      "status": "PASS",
+      "duration_ms": 3035,
+      "details": "All 8 contracts verified"
+    },
+    {
+      "name": "Simulate stake 0.001 ETH",
+      "category": "Dry Run",
+      "status": "PASS",
+      "duration_ms": 373,
+      "details": "simulated stETH returned=979352924321714 wei"
+    },
+    {
+      "name": "Simulate wrap (check allowance first)",
+      "category": "Dry Run",
+      "status": "PASS",
+      "duration_ms": 353,
+      "details": "currentAllowance=0.028656249999999999 ETH (wrap will need approval if insufficient)"
+    },
+    {
+      "name": "Simulate unwrap (check wstETH balance)",
+      "category": "Dry Run",
+      "status": "PASS",
+      "duration_ms": 353,
+      "details": "wstETH balance=0.004085737981154653 ETH (unwrap possible if > 0)"
+    },
+    {
+      "name": "Simulate requestWithdrawals (check queue status)",
+      "category": "Dry Run",
+      "status": "PASS",
+      "duration_ms": 432,
+      "details": "queuePaused=false, lastRequestId=3535"
+    },
+    {
+      "name": "Stake 0.001 ETH -> stETH",
+      "category": "Write Tx",
+      "status": "PASS",
+      "duration_ms": 15637,
+      "details": "txHash=0x42028ed3bb76b4b29558a4e3620ac62838813129aa3558be606b10719c650035, block=2444996",
+      "tx_hash": "0x42028ed3bb76b4b29558a4e3620ac62838813129aa3558be606b10719c650035"
+    },
+    {
+      "name": "Approve stETH for wstETH",
+      "category": "Write Tx",
+      "status": "PASS",
+      "duration_ms": 11316,
+      "details": "txHash=0x16d006854cc4afec445bf507c736b20713a5efd74701367cf3b9e6252a88a1b9, approved=100 ETH",
+      "tx_hash": "0x16d006854cc4afec445bf507c736b20713a5efd74701367cf3b9e6252a88a1b9"
+    },
+    {
+      "name": "Wrap half stETH -> wstETH",
+      "category": "Write Tx",
+      "status": "PASS",
+      "duration_ms": 24851,
+      "details": "txHash=0xd459c0cdee64be17ef2215782002be22bfb15d1decbcfcad06d38732f0cd8fbf, wrapped=0.016414062499999998 ETH",
+      "tx_hash": "0xd459c0cdee64be17ef2215782002be22bfb15d1decbcfcad06d38732f0cd8fbf"
+    },
+    {
+      "name": "Unwrap half wstETH -> stETH",
+      "category": "Write Tx",
+      "status": "PASS",
+      "duration_ms": 24836,
+      "details": "txHash=0xaa2ad184600f2d6f9983acc68d234ac535fde6b2848c61aef576c9cc9d29f36e, unwrapped=0.010080449045264523 ETH",
+      "tx_hash": "0xaa2ad184600f2d6f9983acc68d234ac535fde6b2848c61aef576c9cc9d29f36e"
+    },
+    {
+      "name": "Request withdrawal of 0.0005 stETH",
+      "category": "Write Tx",
+      "status": "PASS",
+      "duration_ms": 19980,
+      "details": "txHash=0xf068c5ac694984cd12af58c54eba5511ed477f1e7a2b5abeac8e33b76eb26c1e, requested=0.0005 ETH",
+      "tx_hash": "0xf068c5ac694984cd12af58c54eba5511ed477f1e7a2b5abeac8e33b76eb26c1e"
+    },
+    {
+      "name": "Verify stETH balance increased",
+      "category": "Post-Tx Verify",
+      "status": "PASS",
+      "duration_ms": 428,
+      "details": "pre=0.031828124999999998 ETH, post=0.026207031249999998 ETH, diff=-0.00562109375 ETH"
+    },
+    {
+      "name": "Verify wstETH balance",
+      "category": "Post-Tx Verify",
+      "status": "PASS",
+      "duration_ms": 410,
+      "details": "pre=0.004085737981154653 ETH, post=0.010080449045264523 ETH, diff=0.00599471106410987 ETH"
+    },
+    {
+      "name": "Verify withdrawal request exists",
+      "category": "Post-Tx Verify",
+      "status": "PASS",
+      "duration_ms": 830,
+      "details": "newRequests=1, latestId=3536, amount=0.0005 ETH, finalized=false"
     }
   ]
 }

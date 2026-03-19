@@ -63,4 +63,25 @@ export const votingAbi = [
     inputs: [],
     outputs: [{ name: "", type: "address" }],
   },
+  {
+    name: "assignDelegate",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "_delegate", type: "address" }],
+    outputs: [],
+  },
+  {
+    name: "unassignDelegate",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: "getDelegate",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_voter", type: "address" }],
+    outputs: [{ name: "", type: "address" }],
+  },
 ] as const;

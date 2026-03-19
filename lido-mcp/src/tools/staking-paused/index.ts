@@ -1,0 +1,37 @@
+import { success, error } from "../../utils/format.js";
+import { lidoAbi } from "../../abis/lido.js";
+import { getContracts } from "../../contracts.js";
+import { getChainId, extractErrorMessage } from "../../utils/helpers.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { Provider } from "../../provider.js";
+
+export function register(server: McpServer, provider: Provider): void {
+  const chainId = getChainId(provider);
+  const contracts = getContracts(chainId);
+
+  server.tool(
+    "lido_is_staking_paused",
+    "Check whether staking is currently paused on the Lido protocol",
+    {},
+    async () => {
+      try {
+        const isPaused = (await provider.publicClient.readContract({
+          address: contracts.lido,
+          abi: lidoAbi,
+          functionName: "isStakingPaused",
+        })) as boolean;
+
+        return success({
+          is_paused: isPaused,
+          summary: isPaused
+            ? "Staking is currently PAUSED on Lido. New deposits are not accepted."
+            : "Staking is ACTIVE on Lido. New deposits are accepted.",
+        });
+      } catch (err) {
+        return error(
+          `Staking paused query failed: ${extractErrorMessage(err, "Unknown error")}. Check the RPC connection.`,
+        );
+      }
+    },
+  );
+}
