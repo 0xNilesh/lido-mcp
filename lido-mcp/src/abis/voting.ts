@@ -1,0 +1,66 @@
+export const votingAbi = [
+  {
+    name: "vote",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "_voteId", type: "uint256" },
+      { name: "_supports", type: "bool" },
+      { name: "_executesIfDecided", type: "bool" },
+    ],
+    outputs: [],
+  },
+  {
+    name: "getVote",
+    type: "function",
+    stateMutability: "view",
+    inputs: [{ name: "_voteId", type: "uint256" }],
+    outputs: [
+      { name: "open", type: "bool" },
+      { name: "executed", type: "bool" },
+      { name: "startDate", type: "uint64" },
+      { name: "snapshotBlock", type: "uint64" },
+      { name: "supportRequired", type: "uint64" },
+      { name: "minAcceptQuorum", type: "uint64" },
+      { name: "yea", type: "uint256" },
+      { name: "nay", type: "uint256" },
+      { name: "votingPower", type: "uint256" },
+      { name: "script", type: "bytes" },
+      { name: "phase", type: "uint8" },
+    ],
+  },
+  {
+    name: "getVoterState",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "_voteId", type: "uint256" },
+      { name: "_voter", type: "address" },
+    ],
+    outputs: [{ name: "", type: "uint8" }],
+  },
+  {
+    name: "votesLength",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    name: "canVote",
+    type: "function",
+    stateMutability: "view",
+    inputs: [
+      { name: "_voteId", type: "uint256" },
+      { name: "_voter", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+  },
+  {
+    name: "token",
+    type: "function",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const;

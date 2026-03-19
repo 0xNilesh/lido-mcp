@@ -1,0 +1,256 @@
+{
+  "timestamp": "2026-03-19T02:30:33.532Z",
+  "network": "Hoodi Testnet (560048)",
+  "wallet": "0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4",
+  "summary": {
+    "total": 34,
+    "passed": 33,
+    "failed": 1,
+    "skipped": 0
+  },
+  "results": [
+    {
+      "name": "Load config from .env",
+      "category": "setup",
+      "status": "PASS",
+      "duration_ms": 0,
+      "details": "RPC: https://hoodi.drpc.org, Chain: 560048, Key: yes"
+    },
+    {
+      "name": "Create provider (viem + LidoSDK)",
+      "category": "setup",
+      "status": "PASS",
+      "duration_ms": 35,
+      "details": "Wallet: 0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4, SDK initialized"
+    },
+    {
+      "name": "Verify RPC connectivity",
+      "category": "setup",
+      "status": "PASS",
+      "duration_ms": 628,
+      "details": "Block: 2444803, Chain ID: 560048"
+    },
+    {
+      "name": "Verify wallet ETH balance",
+      "category": "setup",
+      "status": "PASS",
+      "duration_ms": 459,
+      "details": "Balance: 99.967939569778639664 ETH"
+    },
+    {
+      "name": "Read stETH totalPooledEther",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 414,
+      "details": "Total pooled: 2056455.658940729144862007 ETH"
+    },
+    {
+      "name": "Read stETH totalShares",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 409,
+      "details": "Total shares: 2013995863321541884304863"
+    },
+    {
+      "name": "Read getCurrentStakeLimit",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 277,
+      "details": "Stake limit: 3000 ETH"
+    },
+    {
+      "name": "Read stETH balance of wallet",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 316,
+      "details": "stETH balance: 0.018656249999999999"
+    },
+    {
+      "name": "Read wstETH balance of wallet",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 370,
+      "details": "wstETH balance: 0.008171475962309306"
+    },
+    {
+      "name": "Read wstETH stEthPerToken exchange rate",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 339,
+      "details": "1 wstETH = 1.021082364861048573 stETH"
+    },
+    {
+      "name": "Read sharesOf wallet",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 494,
+      "details": "Shares: 18271052994376990"
+    },
+    {
+      "name": "Read LDO balance of wallet",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 417,
+      "details": "LDO balance: 0"
+    },
+    {
+      "name": "Read withdrawal queue - isBunkerModeActive",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 317,
+      "details": "Bunker mode: false"
+    },
+    {
+      "name": "Read withdrawal queue - getLastFinalizedRequestId",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 306,
+      "details": "Last finalized request ID: 3531"
+    },
+    {
+      "name": "Read Aragon Voting - votesLength",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 334,
+      "details": "Total votes: 61"
+    },
+    {
+      "name": "Share conversion: getSharesByPooledEth(1 ETH)",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 411,
+      "details": "1 ETH = 979352924321714718 shares"
+    },
+    {
+      "name": "Share conversion: getPooledEthByShares(1e18 shares)",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 329,
+      "details": "1e18 shares = 1.021082364861048573 ETH"
+    },
+    {
+      "name": "wstETH conversion: getWstETHByStETH(1 stETH)",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 324,
+      "details": "1 stETH = 0.979352924321714718 wstETH"
+    },
+    {
+      "name": "wstETH conversion: getStETHByWstETH(1 wstETH)",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 376,
+      "details": "1 wstETH = 1.021082364861048573 stETH"
+    },
+    {
+      "name": "Simulate stake 0.01 ETH",
+      "category": "dry_run",
+      "status": "PASS",
+      "duration_ms": 3086,
+      "details": "Simulation SUCCESS. Estimated gas: 87476"
+    },
+    {
+      "name": "Simulate wrap stETH (check allowance flow)",
+      "category": "dry_run",
+      "status": "PASS",
+      "duration_ms": 1118,
+      "details": "stETH balance: 0.018656249999999999, allowance to wstETH: 0.0113125"
+    },
+    {
+      "name": "STAKE: Submit 0.01 ETH to Lido",
+      "category": "write",
+      "status": "PASS",
+      "duration_ms": 12583,
+      "details": "Staked 0.01 ETH. Gas used: 76754. Status: success",
+      "tx_hash": "0x7790e9e19a8ab3783f3202d595cd642906139f7178aff8565a90765d137914f0"
+    },
+    {
+      "name": "VERIFY: stETH balance after stake",
+      "category": "write",
+      "status": "PASS",
+      "duration_ms": 406,
+      "details": "stETH balance: 0.028656249999999999"
+    },
+    {
+      "name": "APPROVE: stETH for wstETH wrap",
+      "category": "write",
+      "status": "PASS",
+      "duration_ms": 11986,
+      "details": "Approved 0.028656249999999999 stETH. Status: success",
+      "tx_hash": "0x0f5d5b0a87c7d508f4daef6289600699e7ec94aa3406e1c65c7b52e0105f76c7"
+    },
+    {
+      "name": "WRAP: Wrap half of stETH to wstETH",
+      "category": "write",
+      "status": "FAIL",
+      "duration_ms": 16372,
+      "details": "",
+      "error": "HTTP request failed.\n\nStatus: 408\nURL: https://hoodi.drpc.org/\nRequest body: {\"method\":\"eth_call\",\"params\":[{\"data\":\"0xea598cb00000000000000000000000000000000000000000000000000032e75a90ec21ff\",\"from\":\"0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4\",\"to\":\"0x7E99eE3C66636DE415D2d7C880938F2f40f94De4\"},\"latest\"]}\n \nRaw Call Arguments:\n  from:  0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4\n  to:    0x7E99eE3C66636DE415D2d7C880938F2f40f94De4\n  data:  0xea598cb00000000000000000000000000000000000000000000000000032e75a90ec21ff\n \nContract Call:\n  address:   0x7E99eE3C66636DE415D2d7C880938F2f40f94De4\n  function:  wrap(uint256 _stETHAmount)\n  args:          (14328124999999999)\n  sender:    0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4\n\nDocs: https://viem.sh/docs/contract/simulateContract\nDetails: {\"message\":\"Request timeout on the free tier, please upgrade your tier to the paid one\",\"code\":30}\nVersion: viem@2.47.5"
+    },
+    {
+      "name": "VERIFY: wstETH balance after wrap",
+      "category": "write",
+      "status": "PASS",
+      "duration_ms": 3473,
+      "details": "wstETH balance: 0.008171475962309306"
+    },
+    {
+      "name": "UNWRAP: Unwrap half of wstETH back to stETH",
+      "category": "write",
+      "status": "PASS",
+      "duration_ms": 19884,
+      "details": "Unwrapped 0.004085737981154653 wstETH. Gas: 91206. Status: success",
+      "tx_hash": "0xf3908592cf226e222bd74aba86d04dc6f9cbd356b5c24fb8b69018221d39ee9c"
+    },
+    {
+      "name": "WITHDRAW REQUEST: Request withdrawal of small stETH amount",
+      "category": "write",
+      "status": "PASS",
+      "duration_ms": 23537,
+      "details": "Withdrawal requested for 0.001 stETH. Gas: 198459. Status: success",
+      "tx_hash": "0x4147948e6f4d7d5774d1c3cd8e919bc3f15a4394bdd58bfeddd6b4c76baf6df1"
+    },
+    {
+      "name": "WITHDRAW STATUS: Get withdrawal requests for wallet",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 355,
+      "details": "Pending withdrawal requests: 4. IDs: [3532, 3533, 3534, 3535]"
+    },
+    {
+      "name": "GOVERNANCE: Read votesLength",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 533,
+      "details": "Total votes on Hoodi: 61"
+    },
+    {
+      "name": "GOVERNANCE: Read latest vote details",
+      "category": "read",
+      "status": "PASS",
+      "duration_ms": 358,
+      "details": "Vote #60: open=false, executed=true, yea=54999.999999999999999995, nay=0"
+    },
+    {
+      "name": "Final ETH balance",
+      "category": "final",
+      "status": "PASS",
+      "duration_ms": 282,
+      "details": "ETH: 99.957427648433100244"
+    },
+    {
+      "name": "Final stETH balance",
+      "category": "final",
+      "status": "PASS",
+      "duration_ms": 351,
+      "details": "stETH: 0.031828124999999998"
+    },
+    {
+      "name": "Final wstETH balance",
+      "category": "final",
+      "status": "PASS",
+      "duration_ms": 284,
+      "details": "wstETH: 0.004085737981154653"
+    }
+  ]
+}
