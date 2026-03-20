@@ -74,11 +74,18 @@ function extractParams(tool: Tool): ParamDef[] {
 }
 
 function categorizeTool(name: string): string {
-  const writeOps = ['stake', 'wrap', 'unwrap', 'transfer', 'approve', 'request', 'claim', 'delegate', 'revoke', 'increase', 'vote', 'undelegate'];
-  for (const op of writeOps) {
-    if (name.includes(op) && !name.includes('get')) return 'write';
-  }
-  return 'read';
+  if (/^lido_(stake|get_staking_limit|is_staking_paused|get_beacon)/.test(name)) return 'staking';
+  if (/^lido_(wrap|unwrap)$/.test(name)) return 'wrapping';
+  if (/withdrawal|withdraw|claim|bunker|nft_owner|approve_nft|transfer.*nft/.test(name)) return 'withdrawals';
+  if (/vote|voter|cast_vote|delegate|undelegate/.test(name) && !name.includes('easy') && !name.includes('dual')) return 'governance';
+  if (/easy_track|motion/.test(name)) return 'easy-track';
+  if (/dual_governance|governance_overview|governance_state/.test(name)) return 'dual-gov';
+  if (/transfer|approve|revoke|increase_allowance|allowance|balance|token_info|convert|exchange_rate|share_rate/.test(name)) return 'tokens';
+  if (/reward/.test(name)) return 'rewards';
+  if (/position|l2_balance|summary/.test(name)) return 'position';
+  if (/protocol|staking_module|node_operator|contract_address|supported_chain/.test(name)) return 'protocol';
+  if (/status|prepare/.test(name)) return 'system';
+  return 'other';
 }
 
 export default function Terminal({ tools, pendingCommand, onCommandConsumed, walletAddress, chainId, chainName }: TerminalProps) {

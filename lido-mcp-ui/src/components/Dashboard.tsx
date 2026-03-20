@@ -140,7 +140,7 @@ function extractValuesFromQuery(query: string, fields: ParamField[]): Record<str
   return values;
 }
 
-function renderResultData(data: any): React.ReactElement {
+function renderResultData(data: any, onCallTool?: (name: string, args: Record<string, any>) => void): React.ReactElement {
   if (!data) return <span className="dash-result-empty">No data</span>;
 
   const summary = data.summary;
@@ -219,18 +219,44 @@ function renderResultData(data: any): React.ReactElement {
     return (
       <div>
         {summary && <div className="dash-result-summary">{summary}</div>}
-        <div className="dash-result-list">
-          {data.votes.map((v: any, i: number) => (
-            <div className="dash-result-list-item" key={i}>
-              <span className="dash-result-list-id">#{v.vote_id ?? v.id ?? i}</span>
-              <span className="dash-result-list-main">
-                {v.open ? '🟢 Open' : v.executed ? '✅ Executed' : '⏸ Closed'}
-              </span>
-              <span className="dash-result-list-detail">
-                {v.yea_pct ? `${v.yea_pct}% FOR` : ''} {v.nay_pct ? `/ ${v.nay_pct}% AGAINST` : ''}
-              </span>
-            </div>
-          ))}
+        <div className="dash-vote-list">
+          {data.votes.map((v: any, i: number) => {
+            const status = v.status || (v.open ? 'open' : v.executed ? 'executed' : 'closed');
+            const support = v.current_support || (v.yea_pct ? `${v.yea_pct}%` : '');
+            const quorum = v.current_quorum || '';
+            return (
+              <div className="dash-vote-card" key={i}>
+                <div className="dash-vote-header">
+                  <span className="dash-vote-id">
+                    <a href={`https://dao.lido.fi/vote/${v.vote_id ?? v.id ?? i}`} target="_blank" rel="noopener noreferrer" className="dash-vote-link">
+                      #{v.vote_id ?? v.id ?? i} ↗
+                    </a>
+                  </span>
+                  <span className={`dash-vote-status ${status}`}>
+                    {status === 'open' ? '🟢 Open' : status === 'executed' ? '✅ Executed' : '⏸ Closed'}
+                  </span>
+                </div>
+                {v.start_date && <div className="dash-vote-date">{v.start_date}</div>}
+                {(v.yea || v.current_support) && (
+                  <div className="dash-vote-bar-wrap">
+                    <div className="dash-vote-bar">
+                      <div className="dash-vote-bar-yea" style={{ width: support || '0%' }} />
+                    </div>
+                    <div className="dash-vote-bar-labels">
+                      <span className="dash-vote-yea">FOR {support}</span>
+                      {quorum && <span className="dash-vote-quorum">Quorum: {quorum}</span>}
+                    </div>
+                  </div>
+                )}
+                {v.yea && (
+                  <div className="dash-vote-tally">
+                    <span>Yea: {v.yea}</span>
+                    <span>Nay: {v.nay || '0'}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     );
@@ -256,39 +282,128 @@ function renderResultData(data: any): React.ReactElement {
     );
   }
 
-  // ─── Generic: extract clean top-level metrics only (no noise) ───
-  const metrics: { label: string; value: string }[] = [];
-  const skip = new Set(['summary', 'error', 'address', 'chain_id', 'dry_run', 'multi_step', 'success']);
+  // ─── Single Vote Detail (from lido_get_vote or lido_get_vote_details) ───
+  if (data.vote_id !== undefined && (data.tallies || data.actions)) {
+    const t = data.tallies || {};
+    const actions = data.actions;
+    const timeline = data.timeline;
+    const links = data.links;
+    return (
+      <div>
+        <div className="dash-vote-card" style={{ marginTop: 6 }}>
+          <div className="dash-vote-header">
+            <span className="dash-vote-id">
+              <a href={links?.dao_ui || `https://dao.lido.fi/vote/${data.vote_id}`} target="_blank" rel="noopener noreferrer" className="dash-vote-link">
+                Vote #{data.vote_id} ↗
+              </a>
+            </span>
+            <span className={`dash-vote-status ${data.is_open ? 'open' : data.is_executed ? 'executed' : 'closed'}`}>
+              {data.is_open ? '🟢 Open' : data.is_executed ? '✅ Executed' : '⏸ Closed'}
+            </span>
+          </div>
 
-  for (const [k, v] of Object.entries(data)) {
-    if (skip.has(k)) continue;
-    if (typeof v === 'boolean') continue; // skip booleans — not meaningful as metrics
-    if (typeof v === 'string' || typeof v === 'number') {
-      const label = k.replace(/_/g, ' ');
-      const val = typeof v === 'number' ? (v > 1e15 ? (v / 1e18).toFixed(6) : String(v)) : String(v);
-      metrics.push({ label, value: val });
-    }
+          {data.title && data.title !== `Vote #${data.vote_id}` && (
+            <div className="dash-vote-title">{data.title}</div>
+          )}
+
+          {data.description && data.description !== 'No description available on-chain.' && (
+            <div className="dash-vote-description">{data.description.substring(0, 500)}{data.description.length > 500 ? '...' : ''}</div>
+          )}
+
+          {(data.phase || timeline?.start) && (
+            <div className="dash-vote-date">
+              {data.phase && <span>Phase: {data.phase}</span>}
+              {timeline?.start && <span> · Started: {timeline.start}</span>}
+            </div>
+          )}
+
+          {(t.support || t.current_support) && (
+            <div className="dash-vote-bar-wrap">
+              <div className="dash-vote-bar">
+                <div className="dash-vote-bar-yea" style={{ width: t.support || t.current_support || '0%' }} />
+              </div>
+              <div className="dash-vote-bar-labels">
+                <span className="dash-vote-yea">FOR {t.support || t.current_support}</span>
+                <span className="dash-vote-quorum">Quorum: {t.quorum || t.current_quorum} (req: {t.quorum_required || '5%'})</span>
+              </div>
+            </div>
+          )}
+
+          <div className="dash-vote-tally">
+            <span>Yea: {t.yea || '0'}</span>
+            <span>Nay: {t.nay || '0'}</span>
+            {t.passed !== undefined && <span>{t.passed ? '✅ Passed' : '❌ Not passed'}</span>}
+          </div>
+
+          {/* Decoded actions — what this proposal does */}
+          {actions && actions.count > 0 && (
+            <div className="dash-vote-actions">
+              <div className="dash-vote-actions-title">Proposal Actions ({actions.count})</div>
+              {actions.description?.map((desc: string, i: number) => (
+                <div className="dash-vote-action-item" key={i}>{desc}</div>
+              ))}
+            </div>
+          )}
+
+          {/* Vote buttons for open proposals */}
+          {data.is_open && onCallTool && (
+            <div className="dash-vote-buttons">
+              <button className="dash-vote-btn for" onClick={() => onCallTool('lido_cast_vote', { vote_id: data.vote_id, vote_for: true, dry_run: false })}>
+                👍 Vote FOR
+              </button>
+              <button className="dash-vote-btn against" onClick={() => onCallTool('lido_cast_vote', { vote_id: data.vote_id, vote_for: false, dry_run: false })}>
+                👎 Vote AGAINST
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
-  // If no top-level primitives, go one level deep but skip internals
-  if (metrics.length === 0) {
-    for (const [section, obj] of Object.entries(data)) {
-      if (skip.has(section) || typeof obj !== 'object' || Array.isArray(obj) || obj === null) continue;
-      // If it's a transaction object, show it nicely
-      if (section === 'transaction' && typeof obj === 'object') {
-        const tx = obj as Record<string, any>;
-        if (tx.description) metrics.push({ label: 'action', value: tx.description });
-        if (tx.to) metrics.push({ label: 'to', value: String(tx.to).substring(0, 10) + '...' });
-        if (tx.value && tx.value !== '0') metrics.push({ label: 'value', value: tx.value + ' wei' });
-        continue;
-      }
-      for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-        if (skip.has(k) || typeof v === 'boolean') continue;
-        if (typeof v === 'string' || typeof v === 'number') {
-          metrics.push({ label: k.replace(/_/g, ' '), value: String(v) });
-        }
+  // ─── Contract Addresses ───
+  if (data.contracts && typeof data.contracts === 'object' && data.contracts.lido) {
+    return (
+      <div>
+        {summary && <div className="dash-result-summary">{summary}</div>}
+        <div className="dash-result-list">
+          {Object.entries(data.contracts as Record<string, string>).map(([name, addr]) => (
+            <div className="dash-result-list-item" key={name}>
+              <span className="dash-result-list-id" style={{ minWidth: 130, textTransform: 'capitalize' }}>{name.replace(/_/g, ' ')}</span>
+              <span className="dash-result-tx-hash" style={{ fontSize: 11 }}>{String(addr)}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Generic: extract all meaningful fields into metric cards ───
+  const metrics: { label: string; value: string }[] = [];
+  const skip = new Set(['summary', 'error', 'address', 'chain_id', 'chain', 'dry_run', 'multi_step', 'success', 'contracts']);
+
+  // Flatten one level: collect primitives from top-level and one-level-deep objects
+  function collect(obj: Record<string, any>, prefix: string) {
+    for (const [k, v] of Object.entries(obj)) {
+      if (skip.has(k)) continue;
+      if (typeof v === 'boolean') {
+        metrics.push({ label: (prefix ? prefix + ' ' : '') + k.replace(/_/g, ' '), value: v ? '✓ Yes' : '✗ No' });
+      } else if (typeof v === 'string' || typeof v === 'number') {
+        const label = (prefix ? prefix + ' ' : '') + k.replace(/_/g, ' ');
+        const val = typeof v === 'number' ? (v > 1e15 ? (v / 1e18).toFixed(6) : String(v)) : String(v);
+        metrics.push({ label, value: val });
+      } else if (v && typeof v === 'object' && !Array.isArray(v) && !prefix) {
+        // Go one level deep only
+        collect(v as Record<string, any>, k.replace(/_/g, ' '));
       }
     }
+  }
+  collect(data, '');
+
+  // Special handling for transaction prepare results
+  if (data.transaction && typeof data.transaction === 'object') {
+    const tx = data.transaction as Record<string, any>;
+    if (tx.description) metrics.unshift({ label: 'action', value: tx.description });
   }
 
   if (metrics.length === 0 && !summary) {
@@ -300,9 +415,9 @@ function renderResultData(data: any): React.ReactElement {
       {summary && <div className="dash-result-summary">{summary}</div>}
       {metrics.length > 0 && (
         <div className="dash-result-metrics">
-          {metrics.slice(0, 12).map((m, i) => (
+          {metrics.slice(0, 16).map((m, i) => (
             <div className="dash-result-metric" key={i}>
-              <span className="dash-metric-value">{m.value}</span>
+              <span className="dash-metric-value">{m.value.length > 30 ? m.value.substring(0, 28) + '...' : m.value}</span>
               <span className="dash-metric-label">{m.label}</span>
             </div>
           ))}
@@ -389,6 +504,7 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
     }
   }, [tools, walletAddress, walletReady, executeViaWallet]);
 
+
   const openInlineParams = useCallback((chipIndex: number, toolName: string, query?: string) => {
     // Close if same chip clicked again
     if (inlineParams?.chipIndex === chipIndex) { setInlineParams(null); return; }
@@ -454,6 +570,86 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
     if (!searchQuery.trim()) return;
     const query = searchQuery.trim();
     setSearchQuery('');
+
+    // ─── Intent detection: direct tool calls for common patterns ───
+    const q = query.toLowerCase();
+
+    // "proposal 198" / "vote 198" / "vote #198" / "show proposal 198" → get vote details
+    const voteMatch = q.match(/(?:proposal|vote|governance)\s*#?\s*(\d+)/);
+    if (voteMatch) {
+      const voteId = parseInt(voteMatch[1]!);
+      setActionResult({ type: 'loading', title: `Vote #${voteId}` });
+      try {
+        const args: Record<string, any> = { vote_id: voteId };
+        if (chainId) args.chain_id = chainId;
+        const res = await fetch(apiUrl('/api/call'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'lido_get_vote_details', args }),
+        });
+        const data = await res.json();
+        const text = data.content?.[0]?.text;
+        setActionResult({ type: 'data', title: `Vote #${voteId}`, data: text ? JSON.parse(text) : data, tool: 'lido_get_vote_details' });
+      } catch (err: any) {
+        setActionResult({ type: 'error', title: query, error: err.message });
+      }
+      return;
+    }
+
+    // "easy track" / "motions" → Easy Track motions
+    if (/easy\s*track|motions/i.test(q)) {
+      setActionResult({ type: 'loading', title: 'Easy Track Motions' });
+      try {
+        const args: Record<string, any> = {};
+        if (chainId) args.chain_id = chainId;
+        const res = await fetch(apiUrl('/api/call'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'lido_get_easy_track_motions', args }),
+        });
+        const data = await res.json();
+        const text = data.content?.[0]?.text;
+        setActionResult({ type: 'data', title: 'Easy Track Motions', data: text ? JSON.parse(text) : data, tool: 'lido_get_easy_track_motions' });
+      } catch (err: any) { setActionResult({ type: 'error', title: query, error: err.message }); }
+      return;
+    }
+
+    // "dual governance" / "governance state" / "is governance blocked" → DG state
+    if (/dual\s*governance|governance\s*state|governance\s*blocked/i.test(q)) {
+      setActionResult({ type: 'loading', title: 'Dual Governance' });
+      try {
+        const args: Record<string, any> = {};
+        if (chainId) args.chain_id = chainId;
+        const res = await fetch(apiUrl('/api/call'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'lido_get_dual_governance_state', args }),
+        });
+        const data = await res.json();
+        const text = data.content?.[0]?.text;
+        setActionResult({ type: 'data', title: 'Dual Governance', data: text ? JSON.parse(text) : data, tool: 'lido_get_dual_governance_state' });
+      } catch (err: any) { setActionResult({ type: 'error', title: query, error: err.message }); }
+      return;
+    }
+
+    // "proposals" / "all proposals" / "governance proposals" / "open votes" → list votes
+    if (/(?:all |open |recent |live )?(?:proposals|votes|governance)$/i.test(q) || q === 'proposals' || q === 'governance') {
+      setActionResult({ type: 'loading', title: 'Governance Proposals' });
+      try {
+        const args: Record<string, any> = { count: 10 };
+        if (chainId) args.chain_id = chainId;
+        if (/open|live|active/i.test(q)) args.status = 'open';
+        const res = await fetch(apiUrl('/api/call'), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: 'lido_list_votes', args }),
+        });
+        const data = await res.json();
+        const text = data.content?.[0]?.text;
+        setActionResult({ type: 'data', title: 'Governance Proposals', data: text ? JSON.parse(text) : data, tool: 'lido_list_votes' });
+      } catch (err: any) {
+        setActionResult({ type: 'error', title: query, error: err.message });
+      }
+      return;
+    }
+
+    // ─── Generic search ───
     setActionResult({ type: 'loading', title: query });
 
     // Try to find matching tool — API search first, then local fallback
@@ -564,7 +760,7 @@ export default function Dashboard({ tools, walletAddress, chainId }: DashboardPr
           ) : (
             <>
               <div className="dash-result-header"><span className="dash-sparkle">✦</span>{actionResult.title}</div>
-              {renderResultData(actionResult.data)}
+              {renderResultData(actionResult.data, callTool)}
               {actionResult.tool && <div className="dash-result-source">via <code>{actionResult.tool}</code></div>}
             </>
           )}
