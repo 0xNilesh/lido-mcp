@@ -1,22 +1,22 @@
 {
-  "timestamp": "2026-03-20T06:19:02.755Z",
+  "timestamp": "2026-03-20T09:16:46.670Z",
   "network": "Hoodi (560048)",
   "wallet": "0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4",
-  "tools_tested": 59,
-  "passed": 59,
+  "tools_tested": 65,
+  "passed": 65,
   "failed": 0,
   "tx_count": 10,
   "tx_hashes": [
-    "0x10054b267a9cbe4db34e9ce64e174355a515c9f215781e4252d5a7815e8763ef",
-    "0xcc45be299fc71ce4ad339a7ab19eba030cd473d1b334a2a9d3ecdc52f08cb51f",
-    "0x9ddc640c4d76d853cb551f906415ae246d0025df86526949b7a46f5adc6c7f4a",
-    "0x2abf1ca007697ba33e46b789e6b2a8d8b4e6a1c633f2bad91c2f0432bf1e6570",
-    "0x0af13f041f09ee4b5c6b3ddbe0b188c6a8b43ac92c153b10e6050db61ec5a7d2",
-    "0xbbedf8d6c97730b4c135f467faef34355ef78452a1481f725b697054f2ceab70",
-    "0xba9b5df78219f6e39a6d100cf774bab492bf720b8ffb1246bcc64059be882d86",
-    "0xa1b3763cd3f7224e9bef3048561fb85a803c1e21f19d5214e348a2f7d4e3f2c5",
-    "0xa7258202d20d6adc6cd307f2e4bcb16343dc199b33f53d613bee1b9aa3a39f23",
-    "0x699f3605340f8d855585cfc43abc3e699f2980b35184724611ccb89402d37e53"
+    "0x6338477185b9ccadcb926ae831bbf847c02e2b187344fb067704c84de18d8d7e",
+    "0xbf8b05ebb705f3b940efee432c9c85498f59332397d55a722683fbd48eb901b3",
+    "0x11782b6dd6b22aec0a333a3fc094ee83043700a8a510c349bf85e80dc67aa7e1",
+    "0x811a4070ae039821b1ad22e0c468703671bc048ecfa4437d24a4588cc1769cf3",
+    "0x2eebffc3031614569450975e4731fa1861a33442adc2423455a6398d6b200f87",
+    "0xeb523b425fdfe087eaee7276b64c805ef31e75cfe03c2aa617f7579ba2aef60c",
+    "0x02b08ae547f7a4d5e53491bac4d80f91d5762c29fa1471f4b5fa5969480f55c8",
+    "0x3159bb8865ebdd476585ea567552a20b42dc04059a0dd7143358c05d50af5dad",
+    "0x6aef91ec11e7e4dfacbd8c27bd53a2ba564c78255d831fef1cb4915d908e863d",
+    "0x87d82f78875024ee1ff06b68fde97003ce20739a95506dbd69d50491ba66119c"
   ],
   "results": [
     {
@@ -24,8 +24,8 @@
       "name": "Server health check",
       "category": "system",
       "status": "PASS",
-      "duration_ms": 417,
-      "details": "Block: 2452410, Chain: 560048"
+      "duration_ms": 409,
+      "details": "Block: 2453217, Chain: 560048"
     },
     {
       "tool": "lido_get_contract_addresses",
@@ -48,15 +48,15 @@
       "name": "Protocol stats + rates",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 583,
-      "details": "TVL: 2056694.920521079314218008 ETH, Shares: 2014080338409754915461204, Limit: 3000"
+      "duration_ms": 490,
+      "details": "TVL: 2056694.956381598844963517 ETH, Shares: 2014080373527246864016478, Limit: 3000"
     },
     {
       "tool": "lido_get_protocol_fee",
       "name": "Protocol fee",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 263,
+      "duration_ms": 281,
       "details": "Fee: 999 basis points (9.99%)"
     },
     {
@@ -64,7 +64,7 @@
       "name": "Staking limit full",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 270,
+      "duration_ms": 363,
       "details": "Current limit: 3000 ETH"
     },
     {
@@ -72,7 +72,7 @@
       "name": "Is staking paused",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 251,
+      "duration_ms": 317,
       "details": "Paused: false"
     },
     {
@@ -80,7 +80,7 @@
       "name": "Beacon chain stats",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 337,
+      "duration_ms": 330,
       "details": "Deposited: 72510, Beacon: 72503, Balance: 2055783.331281364"
     },
     {
@@ -88,15 +88,15 @@
       "name": "stETH token info",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 650,
-      "details": "Liquid staked Ether 2.0 (stETH), 18 decimals, supply: 2056694.920521079314218008"
+      "duration_ms": 524,
+      "details": "Liquid staked Ether 2.0 (stETH), 18 decimals, supply: 2056694.956381598844963517"
     },
     {
       "tool": "lido_get_token_info (wstETH)",
       "name": "wstETH token info",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 373,
+      "duration_ms": 399,
       "details": "Wrapped liquid staked Ether 2.0 (wstETH)"
     },
     {
@@ -104,7 +104,7 @@
       "name": "LDO token info",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 357,
+      "duration_ms": 377,
       "details": "TEST Lido DAO Token, supply: 1000000"
     },
     {
@@ -112,7 +112,7 @@
       "name": "All exchange rates",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 360,
+      "duration_ms": 355,
       "details": "1 wstETH = 1.021158332812568605 stETH, 1 stETH = 0.979280066437598985 wstETH"
     },
     {
@@ -120,7 +120,7 @@
       "name": "Share rate",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 354,
+      "duration_ms": 395,
       "details": "Share rate: 1.021158332812568605"
     },
     {
@@ -128,7 +128,7 @@
       "name": "Convert 1 ETH to wstETH",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 339,
+      "duration_ms": 256,
       "details": "1 ETH ≈ 0.979280066437598985 wstETH"
     },
     {
@@ -136,31 +136,31 @@
       "name": "All balances",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 547,
-      "details": "ETH: 99.947040341037564355, stETH: 0.026575194784771804, wstETH: 0.014314925823509624, LDO: 0, shares: 26024558514423467"
+      "duration_ms": 495,
+      "details": "ETH: 99.944161949660826992, stETH: 0.027490298982714189, wstETH: 0.014887702623407676, LDO: 0, shares: 26920701814181811"
     },
     {
       "tool": "lido_get_rewards",
       "name": "Reward projections",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 396,
-      "details": "stETH: 0.026575194784771804, est. daily: 0.00000255 ETH at ~3.5% APR"
+      "duration_ms": 338,
+      "details": "stETH: 0.027490298982714189, est. daily: 0.00000264 ETH at ~3.5% APR"
     },
     {
       "tool": "lido_get_position_overview",
       "name": "Full position overview",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 454,
-      "details": "Total: ETH=99.947040341037564355, stETH=0.026575194784771804, wstETH=0.014314925823509624"
+      "duration_ms": 456,
+      "details": "Total: ETH=99.944161949660826992, stETH=0.027490298982714189, wstETH=0.014887702623407676"
     },
     {
       "tool": "lido_get_allowance",
       "name": "stETH allowance for wstETH",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 276,
+      "duration_ms": 362,
       "details": "stETH→wstETH allowance: 0"
     },
     {
@@ -168,7 +168,7 @@
       "name": "All token allowances",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 398,
+      "duration_ms": 630,
       "details": "stETH→wstETH: 0, stETH→WQ: 0.0005"
     },
     {
@@ -176,23 +176,23 @@
       "name": "Queue stats",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 305,
-      "details": "Last: 3552, Finalized: 3552, Unfinalized: 0, Bunker: false"
+      "duration_ms": 435,
+      "details": "Last: 3556, Finalized: 3552, Unfinalized: 4, Bunker: false"
     },
     {
       "tool": "lido_get_withdrawal_requests",
       "name": "My withdrawal requests",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 308,
-      "details": "7 requests: [3532, 3533, 3534, 3535, 3536...]"
+      "duration_ms": 278,
+      "details": "8 requests: [3532, 3533, 3534, 3535, 3536...]"
     },
     {
       "tool": "lido_get_withdrawal_status",
       "name": "Withdrawal request status",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 518,
+      "duration_ms": 1759,
       "details": "Request 3532: finalized=true"
     },
     {
@@ -200,7 +200,7 @@
       "name": "Bunker mode check",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 333,
+      "duration_ms": 322,
       "details": "Active: false, Since: 115792089237316195423570985008687907853269984665640564039457584007913129639935"
     },
     {
@@ -208,15 +208,15 @@
       "name": "Claimable ether check",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 778,
-      "details": "7 requests found for claimable check"
+      "duration_ms": 265,
+      "details": "8 requests found for claimable check"
     },
     {
       "tool": "lido_get_nft_owner",
       "name": "Withdrawal NFT owner",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 566,
+      "duration_ms": 688,
       "details": "NFT 3532: owner=0x778D3206374f8AC265728E18E3fE2Ae6b93E4ce4"
     },
     {
@@ -224,7 +224,7 @@
       "name": "Total votes",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 327,
+      "duration_ms": 642,
       "details": "Total votes: 61"
     },
     {
@@ -232,7 +232,7 @@
       "name": "Latest vote details",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 601,
+      "duration_ms": 1042,
       "details": "Vote #60: open=false, executed=true, yea=54999.999999999999999995"
     },
     {
@@ -240,7 +240,7 @@
       "name": "List recent votes",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 246,
+      "duration_ms": 491,
       "details": "61 votes available to list"
     },
     {
@@ -248,7 +248,7 @@
       "name": "Can wallet vote",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 500,
+      "duration_ms": 719,
       "details": "Can vote on #60: false"
     },
     {
@@ -256,7 +256,7 @@
       "name": "Voter state",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 776,
+      "duration_ms": 1227,
       "details": "Vote #60: absent"
     },
     {
@@ -264,7 +264,7 @@
       "name": "Check delegate",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 317,
+      "duration_ms": 411,
       "details": "Delegate: 0x0000000000000000000000000000000000000000"
     },
     {
@@ -272,7 +272,7 @@
       "name": "Staking modules count",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 249,
+      "duration_ms": 409,
       "details": "4 staking modules"
     },
     {
@@ -280,7 +280,7 @@
       "name": "Staking module #1 details",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 252,
+      "duration_ms": 413,
       "details": "Module 1 query attempted: Number \"530130644679730222846572385530731821717724986293n\" i"
     },
     {
@@ -288,7 +288,7 @@
       "name": "Node operators count",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 349,
+      "duration_ms": 817,
       "details": "39 node operators"
     },
     {
@@ -296,7 +296,7 @@
       "name": "Node operator #0 details",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 384,
+      "duration_ms": 330,
       "details": "Operator 0: active=true, name=Dev team"
     },
     {
@@ -304,7 +304,7 @@
       "name": "L2 wstETH balances (Arbitrum)",
       "category": "read",
       "status": "PASS",
-      "duration_ms": 386,
+      "duration_ms": 380,
       "details": "Arbitrum wstETH: 0"
     },
     {
@@ -312,7 +312,7 @@
       "name": "Simulate stake 0.001 ETH",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 2251,
+      "duration_ms": 1830,
       "details": "Simulation OK. Gas: 87441"
     },
     {
@@ -320,7 +320,7 @@
       "name": "Simulate ETH→wstETH direct",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 1884,
+      "duration_ms": 2293,
       "details": "Simulation OK. Gas: 101644"
     },
     {
@@ -328,23 +328,23 @@
       "name": "Simulate wrap check",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 354,
-      "details": "stETH available to wrap: 0.026575194784771804"
+      "duration_ms": 389,
+      "details": "stETH available to wrap: 0.027490298982714189"
     },
     {
       "tool": "lido_unwrap (dry_run)",
       "name": "Simulate unwrap check",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 429,
-      "details": "wstETH available to unwrap: 0.014314925823509624"
+      "duration_ms": 339,
+      "details": "wstETH available to unwrap: 0.014887702623407676"
     },
     {
       "tool": "lido_transfer (dry_run)",
       "name": "Simulate stETH transfer",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 698,
+      "duration_ms": 728,
       "details": "Transfer simulation OK (self-transfer)"
     },
     {
@@ -352,7 +352,7 @@
       "name": "Simulate approve",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 321,
+      "duration_ms": 359,
       "details": "Approve simulation OK"
     },
     {
@@ -360,7 +360,7 @@
       "name": "Simulate increase allowance",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 321,
+      "duration_ms": 325,
       "details": "Increase allowance simulation OK"
     },
     {
@@ -368,7 +368,7 @@
       "name": "Simulate revoke",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 526,
+      "duration_ms": 402,
       "details": "Revoke simulation OK"
     },
     {
@@ -376,15 +376,15 @@
       "name": "Simulate withdrawal request",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 353,
-      "details": "stETH available for withdrawal: 0.026575194784771804"
+      "duration_ms": 328,
+      "details": "stETH available for withdrawal: 0.027490298982714189"
     },
     {
       "tool": "lido_cast_vote (dry_run)",
       "name": "Simulate vote cast",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 1291,
+      "duration_ms": 794,
       "details": "Latest vote: #60, canVote: false"
     },
     {
@@ -392,7 +392,7 @@
       "name": "Simulate delegation",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 509,
+      "duration_ms": 3491,
       "details": "Delegate sim: The contract function \"assignDelegate\" reverted with the fol"
     },
     {
@@ -400,7 +400,7 @@
       "name": "Simulate undelegation",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 614,
+      "duration_ms": 401,
       "details": "Undelegate sim: The contract function \"unassignDelegate\" reverted with the f"
     },
     {
@@ -408,7 +408,7 @@
       "name": "Simulate LDO transfer",
       "category": "dry_run",
       "status": "PASS",
-      "duration_ms": 349,
+      "duration_ms": 409,
       "details": "LDO balance: 0 (none to transfer)"
     },
     {
@@ -416,90 +416,138 @@
       "name": "Stake 0.001 ETH",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 31949,
+      "duration_ms": 51920,
       "details": "Staked 0.001 ETH. Gas: 76754. Status: success",
-      "tx_hash": "0x10054b267a9cbe4db34e9ce64e174355a515c9f215781e4252d5a7815e8763ef"
+      "tx_hash": "0x6338477185b9ccadcb926ae831bbf847c02e2b187344fb067704c84de18d8d7e"
     },
     {
       "tool": "lido_approve",
       "name": "Approve stETH for wstETH",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 11425,
-      "details": "Approved 0.027575194784771803 stETH. Status: success",
-      "tx_hash": "0xcc45be299fc71ce4ad339a7ab19eba030cd473d1b334a2a9d3ecdc52f08cb51f"
+      "duration_ms": 20204,
+      "details": "Approved 0.028490298982714188 stETH. Status: success",
+      "tx_hash": "0xbf8b05ebb705f3b940efee432c9c85498f59332397d55a722683fbd48eb901b3"
     },
     {
       "tool": "lido_wrap",
       "name": "Wrap half stETH",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 13150,
-      "details": "Wrapped 0.013787597392385901 stETH. Gas: 97007",
-      "tx_hash": "0x9ddc640c4d76d853cb551f906415ae246d0025df86526949b7a46f5adc6c7f4a"
+      "duration_ms": 11539,
+      "details": "Wrapped 0.014245149491357094 stETH. Gas: 97007",
+      "tx_hash": "0x11782b6dd6b22aec0a333a3fc094ee83043700a8a510c349bf85e80dc67aa7e1"
     },
     {
       "tool": "lido_unwrap",
       "name": "Unwrap half wstETH",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 13202,
-      "details": "Unwrapped 0.013908422556970077 wstETH. Gas: 91206",
-      "tx_hash": "0x2abf1ca007697ba33e46b789e6b2a8d8b4e6a1c633f2bad91c2f0432bf1e6570"
+      "duration_ms": 23792,
+      "details": "Unwrapped 0.01441884678185869 wstETH. Gas: 91206",
+      "tx_hash": "0x811a4070ae039821b1ad22e0c468703671bc048ecfa4437d24a4588cc1769cf3"
     },
     {
       "tool": "lido_increase_allowance",
       "name": "Increase stETH allowance for WQ",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 23516,
+      "duration_ms": 11421,
       "details": "Increased allowance. Gas: 49075",
-      "tx_hash": "0x0af13f041f09ee4b5c6b3ddbe0b188c6a8b43ac92c153b10e6050db61ec5a7d2"
+      "tx_hash": "0x2eebffc3031614569450975e4731fa1861a33442adc2423455a6398d6b200f87"
     },
     {
       "tool": "lido_approve (WQ)",
       "name": "Approve stETH for WithdrawalQueue",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 16225,
+      "duration_ms": 11103,
       "details": "Approved for WQ. Gas: 48350",
-      "tx_hash": "0xbbedf8d6c97730b4c135f467faef34355ef78452a1481f725b697054f2ceab70"
+      "tx_hash": "0xeb523b425fdfe087eaee7276b64c805ef31e75cfe03c2aa617f7579ba2aef60c"
     },
     {
       "tool": "lido_request_withdrawal",
       "name": "Request withdrawal 0.0005 stETH",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 7166,
-      "details": "Withdrawal requested. Gas: 220359",
-      "tx_hash": "0xba9b5df78219f6e39a6d100cf774bab492bf720b8ffb1246bcc64059be882d86"
+      "duration_ms": 24339,
+      "details": "Withdrawal requested. Gas: 203259",
+      "tx_hash": "0x02b08ae547f7a4d5e53491bac4d80f91d5762c29fa1471f4b5fa5969480f55c8"
     },
     {
       "tool": "lido_stake_and_wrap",
       "name": "Send 0.001 ETH to wstETH (stake+wrap)",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 23861,
+      "duration_ms": 11161,
       "details": "Stake+wrap 0.001 ETH. Gas: 100662. Status: success",
-      "tx_hash": "0xa1b3763cd3f7224e9bef3048561fb85a803c1e21f19d5214e348a2f7d4e3f2c5"
+      "tx_hash": "0x3159bb8865ebdd476585ea567552a20b42dc04059a0dd7143358c05d50af5dad"
     },
     {
       "tool": "lido_transfer",
       "name": "Self-transfer 1 wei stETH",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 11670,
+      "duration_ms": 11371,
       "details": "Self-transferred 1 wei stETH. Gas: 59542",
-      "tx_hash": "0xa7258202d20d6adc6cd307f2e4bcb16343dc199b33f53d613bee1b9aa3a39f23"
+      "tx_hash": "0x6aef91ec11e7e4dfacbd8c27bd53a2ba564c78255d831fef1cb4915d908e863d"
     },
     {
       "tool": "lido_revoke_all_approvals",
       "name": "Revoke stETH approval for wstETH",
       "category": "write_tx",
       "status": "PASS",
-      "duration_ms": 11574,
+      "duration_ms": 15476,
       "details": "Revoked approval. Gas: 43478",
-      "tx_hash": "0x699f3605340f8d855585cfc43abc3e699f2980b35184724611ccb89402d37e53"
+      "tx_hash": "0x87d82f78875024ee1ff06b68fde97003ce20739a95506dbd69d50491ba66119c"
+    },
+    {
+      "tool": "lido_get_vault_hub_stats",
+      "name": "VaultHub stats",
+      "category": "stvaults",
+      "status": "PASS",
+      "duration_ms": 328,
+      "details": "541 vaults on VaultHub"
+    },
+    {
+      "tool": "lido_list_vaults",
+      "name": "List vaults (first 3)",
+      "category": "stvaults",
+      "status": "PASS",
+      "duration_ms": 987,
+      "details": "Vault #1: 0xEde7320BAC..., Vault #2: 0x7FbB823699..."
+    },
+    {
+      "tool": "lido_get_vault",
+      "name": "Get vault #1 details",
+      "category": "stvaults",
+      "status": "PASS",
+      "duration_ms": 1369,
+      "details": "Vault 0xEde7320B...: connected=true, healthy=true, value=1 ETH"
+    },
+    {
+      "tool": "lido_get_vault (owner)",
+      "name": "Read vault owner",
+      "category": "stvaults",
+      "status": "PASS",
+      "duration_ms": 800,
+      "details": "Owner: 0x4C9fFC325392090F789255b9948Ab1659b797964"
+    },
+    {
+      "tool": "lido_get_vault (nodeOperator)",
+      "name": "Read vault node operator",
+      "category": "stvaults",
+      "status": "PASS",
+      "duration_ms": 698,
+      "details": "Node operator: 0x317Eb725E5eC272651e594e7D14f49ad9D46A98B"
+    },
+    {
+      "tool": "lido_get_vault (depositsPaused)",
+      "name": "Read deposits paused status",
+      "category": "stvaults",
+      "status": "PASS",
+      "duration_ms": 614,
+      "details": "Deposits paused: true"
     }
   ]
 }

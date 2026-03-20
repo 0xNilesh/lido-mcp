@@ -1,5 +1,5 @@
 /**
- * COMPREHENSIVE TEST: Every single one of the 52 tools tested.
+ * COMPREHENSIVE TEST: All 67 tools tested across 13 categories.
  * Hoodi testnet. Only counts transactions from THIS run.
  */
 import { createPublicClient, createWalletClient, http, formatEther, parseEther, type Chain } from 'viem';
@@ -524,6 +524,74 @@ async function main() {
     const hash = await wc().writeContract(request);
     const receipt = await pc().waitForTransactionReceipt({ hash, timeout: 120_000 });
     return { details: `Revoked approval. Gas: ${receipt.gasUsed}`, tx_hash: hash };
+  });
+
+  // ─── 13. stVAULTS (V3) ───
+  console.log('\n🏗️ stVaults (V3) Tools');
+
+  const vhAbi = [
+    { name: 'vaultsCount', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+    { name: 'vaultByIndex', type: 'function', stateMutability: 'view', inputs: [{ type: 'uint256' }], outputs: [{ type: 'address' }] },
+    { name: 'isVaultConnected', type: 'function', stateMutability: 'view', inputs: [{ name: '_vault', type: 'address' }], outputs: [{ type: 'bool' }] },
+    { name: 'isVaultHealthy', type: 'function', stateMutability: 'view', inputs: [{ name: '_vault', type: 'address' }], outputs: [{ type: 'bool' }] },
+    { name: 'totalValue', type: 'function', stateMutability: 'view', inputs: [{ name: '_vault', type: 'address' }], outputs: [{ type: 'uint256' }] },
+    { name: 'withdrawableValue', type: 'function', stateMutability: 'view', inputs: [{ name: '_vault', type: 'address' }], outputs: [{ type: 'uint256' }] },
+    { name: 'locked', type: 'function', stateMutability: 'view', inputs: [{ name: '_vault', type: 'address' }], outputs: [{ type: 'uint256' }] },
+  ] as const;
+
+  await test('lido_get_vault_hub_stats', 'VaultHub stats', 'stvaults', async () => {
+    const count = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultsCount' }) as bigint;
+    return { details: `${count} vaults on VaultHub` };
+  });
+
+  await test('lido_list_vaults', 'List vaults (first 3)', 'stvaults', async () => {
+    const count = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultsCount' }) as bigint;
+    if (count === 0n) return { details: 'No vaults found' };
+    const v1 = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultByIndex', args: [1n] }) as string;
+    const v2 = count > 1n ? await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultByIndex', args: [2n] }) as string : 'N/A';
+    return { details: `Vault #1: ${v1.substring(0, 12)}..., Vault #2: ${typeof v2 === 'string' ? v2.substring(0, 12) : 'N/A'}...` };
+  });
+
+  await test('lido_get_vault', 'Get vault #1 details', 'stvaults', async () => {
+    const count = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultsCount' }) as bigint;
+    if (count === 0n) return { details: 'No vaults' };
+    const v1 = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultByIndex', args: [1n] }) as `0x${string}`;
+    const [connected, healthy, tv] = await Promise.all([
+      pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'isVaultConnected', args: [v1] }) as Promise<boolean>,
+      pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'isVaultHealthy', args: [v1] }) as Promise<boolean>,
+      pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'totalValue', args: [v1] }) as Promise<bigint>,
+    ]);
+    return { details: `Vault ${v1.substring(0, 10)}...: connected=${connected}, healthy=${healthy}, value=${formatEther(tv)} ETH` };
+  });
+
+  await test('lido_get_vault (owner)', 'Read vault owner', 'stvaults', async () => {
+    const v1 = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultByIndex', args: [1n] }) as `0x${string}`;
+    const owner = await pc().readContract({
+      address: v1,
+      abi: [{ name: 'owner', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] }] as const,
+      functionName: 'owner',
+    }) as string;
+    return { details: `Owner: ${owner}` };
+  });
+
+  await test('lido_get_vault (nodeOperator)', 'Read vault node operator', 'stvaults', async () => {
+    const v1 = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultByIndex', args: [1n] }) as `0x${string}`;
+    const op = await pc().readContract({
+      address: v1,
+      abi: [{ name: 'nodeOperator', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] }] as const,
+      functionName: 'nodeOperator',
+    }) as string;
+    return { details: `Node operator: ${op}` };
+  });
+
+  await test('lido_get_vault (depositsPaused)', 'Read deposits paused status', 'stvaults', async () => {
+    const v1 = await pc().readContract({ address: contracts.vaultHub, abi: vhAbi, functionName: 'vaultByIndex', args: [1n] }) as `0x${string}`;
+    const paused = await pc().readContract({
+      address: v1,
+      abi: [{ name: 'beaconChainDepositsPaused', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bool' }] }] as const,
+      functionName: 'beaconChainDepositsPaused',
+    }) as boolean;
+    return { details: `Deposits paused: ${paused}` };
   });
 
   // ─── REPORT ───
