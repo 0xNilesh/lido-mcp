@@ -1,8 +1,29 @@
 {
   "name": "lido-mcp",
   "version": "0.1.0",
-  "description": "MCP server for Lido liquid staking — stake, unstake, wrap, governance, all from AI agents",
+  "description": "A MCP server that provides Claude AI and other MCP-compatible agents with real-time access to Lido liquid staking on Ethereum — stake, unstake, wrap, govern, and manage staking positions directly from a conversation.",
   "type": "module",
+  "author": "Nilesh Gupta",
+  "license": "MIT",
+  "keywords": [
+    "lido",
+    "mcp",
+    "steth",
+    "wsteth",
+    "staking",
+    "ethereum",
+    "liquid-staking",
+    "model-context-protocol",
+    "ai-agent",
+    "claude",
+    "defi",
+    "governance",
+    "stvaults"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xnilesh/lido-mcp"
+  },
   "bin": {
     "lido-mcp": "./dist/index.js"
   },
