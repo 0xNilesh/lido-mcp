@@ -80,26 +80,122 @@ These are non-negotiable. Violating them can lose user funds or cause confusion.
 - If the user says "stake 1 ETH", stake exactly 1 ETH. Never round up, never stake their full balance unless they explicitly say so.
 - If they say "stake all my ETH", leave a small buffer (~0.01 ETH) for gas fees and warn them about it.
 
+### Safe Staking Patterns
+- Before a large stake (>10 ETH), check `lido_get_staking_limit` to verify protocol capacity. The stake limit is protocol-wide and regenerates over blocks.
+- When staking all ETH, always keep a **0.01-0.05 ETH buffer** for future gas fees. Tell the user: "I'm keeping 0.02 ETH for gas."
+- After staking, the stETH balance may show 1-2 wei less than the ETH deposited. This is normal share rounding, not lost funds.
+- stETH balance will appear to "drop" slightly right before the daily rebase (oracle report). It hasn't dropped — the rebase just hasn't happened yet. Don't alarm the user.
+- If `isStakingPaused` returns true, staking is temporarily halted. Don't retry — inform the user and suggest checking back later.
+- For large positions, recommend wrapping to wstETH — it avoids the psychological confusion of rebasing balances and is safer for DeFi integrations.
+- Never recommend swapping stETH for ETH on a DEX during market stress. The protocol withdrawal queue always returns full value (1:1), even if the DEX price shows a discount. The trade-off is waiting 1-5 days.
+
+### Rebasing Gotchas for Agents
+- Do NOT compare stETH balances across different blocks/timestamps and conclude funds were lost. The balance changes with every rebase.
+- When computing "profit", compare shares (which are stable) rather than stETH balances (which rebase). Use `lido_get_balance` which returns both.
+- wstETH-to-stETH exchange rate only goes UP (barring a slashing event). If a user asks "did I lose money on wstETH?", the answer is almost certainly no — check the rate with `lido_get_exchange_rates`.
+- Negative rebases (stETH balance going down) are extremely rare and only happen during mass slashing events. If one occurs, explain calmly — it is a known risk, not a hack.
+
+### wstETH vs stETH: Deeper Tradeoffs
+- **Tax implications**: In some jurisdictions, daily rebasing (stETH balance increasing) may be treated as a taxable event. wstETH avoids this because the balance doesn't change — only the exchange rate moves. This is NOT tax advice, but worth mentioning if the user asks.
+- **Smart contract compatibility**: Many DeFi protocols (Aave, Maker, Uniswap) support wstETH but NOT stETH, precisely because rebasing breaks their accounting. Always recommend wstETH for DeFi.
+- **Bridging**: stETH CANNOT be bridged to L2. If someone bridges stETH, the rewards go to the bridge contract and are permanently locked. Always wrap to wstETH before bridging. This is a critical safety rule.
+- **Conversion is lossless**: Wrapping stETH → wstETH and unwrapping back preserves value exactly (minus 1-2 wei for rounding). There is no fee, no slippage, no cost beyond gas. Users should not hesitate to wrap/unwrap.
+
 ---
 
-## Tool Quick Reference
+## Tool Reference (by Category)
 
-| Tool | What It Does |
-|------|-------------|
-| `lido_status` | Health check -- verify connection, chain, wallet status |
-| `lido_stake` | Stake ETH to receive stETH |
-| `lido_wrap` | Wrap stETH into wstETH (instant) |
-| `lido_unwrap` | Unwrap wstETH back to stETH (instant) |
-| `lido_request_withdrawal` | Request to withdraw stETH/wstETH back to ETH (takes 1-5 days) |
-| `lido_claim_withdrawal` | Claim finalized withdrawal requests to receive ETH |
-| `lido_get_withdrawal_status` | Check status of pending withdrawal requests |
-| `lido_get_balance` | Get stETH, wstETH, ETH, LDO, and share balances (supports L2 chains) |
-| `lido_get_rewards` | Get current APR and estimated reward earnings |
-| `lido_get_protocol_info` | Protocol stats: TVL, APR, exchange rates, stake limits, governance state |
-| `lido_get_position_overview` | Full position summary across all chains in one call |
-| `lido_list_votes` | List recent governance proposals (filter by open/executed/all) |
-| `lido_get_vote` | Get details of a specific governance proposal |
-| `lido_cast_vote` | Vote FOR or AGAINST a governance proposal (requires LDO) |
+### ↗ Staking
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_stake` | write | Stake ETH → receive stETH |
+| `lido_stake_and_wrap` | write | Stake ETH → receive wstETH (one tx, more gas efficient) |
+| `lido_get_staking_limit` | read | Current protocol-wide staking capacity |
+| `lido_is_staking_paused` | read | Quick check: is staking open? |
+| `lido_get_beacon_stats` | read | Validator stats: deposited, active, beacon balance |
+
+### ⇄ Wrapping
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_wrap` | write | stETH → wstETH (instant, on-chain, no fee) |
+| `lido_unwrap` | write | wstETH → stETH (instant, on-chain, no fee) |
+
+### ↩ Withdrawals
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_request_withdrawal` | write | Request ETH withdrawal from stETH/wstETH (takes 1-5 days) |
+| `lido_claim_withdrawal` | write | Claim finalized withdrawal requests → receive ETH |
+| `lido_claim_single_withdrawal` | write | Claim one specific withdrawal request (simpler) |
+| `lido_get_withdrawal_status` | read | Check status of specific withdrawal request IDs |
+| `lido_get_withdrawal_requests` | read | List all withdrawal request IDs for an address |
+| `lido_get_withdrawal_queue_info` | read | Protocol-level queue: depth, pending, locked ETH, bunker mode |
+| `lido_get_claimable_ether` | read | How much ETH is claimable for specific request IDs |
+| `lido_is_bunker_mode` | read | Is the protocol in emergency bunker mode? |
+
+### 🪙 Tokens & Balances
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_get_balance` | read | ETH + stETH + wstETH + LDO + shares for an address |
+| `lido_transfer` | write | Transfer stETH, wstETH, or shares to another address |
+| `lido_transfer_ldo` | write | Transfer LDO governance tokens |
+| `lido_approve` | write | Approve stETH/wstETH/LDO spending for a contract |
+| `lido_revoke_all_approvals` | write | Revoke stETH + wstETH approvals for a spender |
+| `lido_get_allowance` | read | Check token allowance for a specific spender |
+| `lido_get_all_allowances` | read | Check allowances for all common Lido spenders |
+| `lido_convert` | read | Convert between ETH ↔ stETH ↔ wstETH ↔ shares |
+| `lido_get_exchange_rates` | read | Current stETH/wstETH exchange rate + share rate |
+| `lido_get_token_info` | read | Token metadata: name, symbol, decimals, totalSupply |
+
+### 💎 Rewards
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_get_rewards` | read | APR, projected daily/monthly/yearly rewards for an address |
+
+### 📊 Position & Portfolio
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_summary` | read | **The god tool** — everything about an address in one call |
+| `lido_get_position_overview` | read | Balances + L2 wstETH + pending withdrawals + rewards |
+| `lido_get_l2_balances` | read | wstETH balances across all supported L2 chains |
+
+### 🏛 Governance (Aragon Voting)
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_cast_vote` | write | Vote FOR or AGAINST a proposal (requires LDO) |
+| `lido_delegate` | write | Delegate your voting power to another address |
+| `lido_list_votes` | read | List recent proposals (filter: all/open/executed) |
+| `lido_get_vote` | read | Get vote tallies and status for a specific proposal |
+| `lido_get_vote_details` | read | **Deep dive** — decoded on-chain actions + IPFS description |
+| `lido_can_vote` | read | Can a specific address vote on a proposal? |
+| `lido_get_voter_state` | read | How did an address vote? (absent/yea/nay) |
+
+### ⚡ Easy Track
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_get_easy_track_motions` | read | List active Easy Track motions with time remaining |
+| `lido_object_to_motion` | write | Object to a motion (uses stETH, NOT LDO) |
+
+### 🛡 Dual Governance
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_get_dual_governance_state` | read | Current state: Normal / VetoSignalling / Blocked / RageQuit |
+| `lido_get_governance_overview` | read | Full governance landscape: DG state + links |
+
+### ⬢ Protocol Infrastructure
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_get_protocol_info` | read | TVL, shares, rates, limits, fee, paused state |
+| `lido_get_protocol_fee` | read | Current protocol fee in basis points |
+| `lido_get_staking_modules` | read | List staking modules (Curated, SimpleDVT, CSM) |
+| `lido_get_node_operators` | read | Count of node operators |
+| `lido_get_contract_addresses` | read | All protocol contract addresses for current chain |
+| `lido_get_supported_chains` | read | All supported chains + L2 wstETH addresses |
+
+### ⚙ System
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_status` | read | Health check: chain, wallet, block number |
+| `lido_prepare_transaction` | write | Encode tx calldata for browser wallet signing |
 
 ---
 
@@ -138,6 +234,25 @@ These are non-negotiable. Violating them can lose user funds or cause confusion.
 3. `lido_cast_vote` with `dry_run: true` -- simulate
 4. User confirms
 5. `lido_cast_vote` with `dry_run: false` -- execute the vote
+
+### Get Complete Position Summary
+1. `lido_summary` -- one call returns EVERYTHING: balances, staking, rewards, withdrawals, allowances, governance, protocol stats
+2. Use this as the first call when a user asks "what's my position?" or "show me everything"
+
+### Monitor Easy Track
+1. `lido_get_easy_track_motions` -- shows all active motions with time remaining and objection status
+2. If a motion looks objectionable: `lido_object_to_motion` (requires stETH, not LDO -- different from Aragon voting)
+3. Easy Track motions auto-pass after 72 hours unless 0.5% of stETH objects
+
+### Check Dual Governance Health
+1. `lido_get_dual_governance_state` -- returns Normal, VetoSignalling, VetoCooldown, or RageQuit
+2. If state is NOT Normal, warn the user that governance proposals may be delayed or blocked
+3. This is critical context before voting or expecting proposal execution
+
+### Stake and Wrap in One Transaction
+1. `lido_stake_and_wrap` -- sends ETH directly to the wstETH contract
+2. More gas-efficient than staking then wrapping separately
+3. Useful when the user wants wstETH directly (for DeFi or bridging)
 
 ---
 
@@ -205,15 +320,24 @@ Be transparent with users about these risks:
 
 User says... | You do
 ---|---
-"Stake 2 ETH" | `lido_stake(amount: "2", dry_run: true)` then confirm then execute
-"What's my balance?" | `lido_get_position_overview` for full picture, or `lido_get_balance` for specific chain
-"Withdraw my stETH" / "Unstake" / "Get my ETH back" | `lido_request_withdrawal` (NOT unwrap)
-"Unwrap my wstETH" / "Convert wstETH to stETH" | `lido_unwrap` (NOT withdrawal)
+"Stake 2 ETH" | `lido_stake(amount: "2", dry_run: true)` → confirm → execute
+"Get me wstETH" | `lido_stake_and_wrap(amount: "2")` — one tx, more efficient
+"What's my balance?" | `lido_summary` for everything, or `lido_get_balance` for basics
+"Show me everything" | `lido_summary` — the god tool
+"Withdraw my stETH" / "Unstake" / "Get ETH back" | `lido_request_withdrawal` (NOT unwrap!)
+"Unwrap my wstETH" / "Convert wstETH to stETH" | `lido_unwrap` (NOT withdrawal!)
 "Wrap my stETH" / "I need wstETH" | `lido_wrap`
 "How much am I earning?" | `lido_get_rewards`
 "What's the current APR?" | `lido_get_protocol_info`
-"Show me my wstETH on Arbitrum" | `lido_get_balance(chain: "arbitrum")`
+"Show my wstETH on Arbitrum" | `lido_get_balance(chain: "arbitrum")`
+"Show all my L2 balances" | `lido_get_l2_balances`
 "Any open governance votes?" | `lido_list_votes(status: "open")`
-"Vote yes on proposal 178" | `lido_cast_vote(vote_id: 178, vote_for: true, dry_run: true)` then confirm
+"Tell me about proposal 198" | `lido_get_vote_details(vote_id: 198)` — gets IPFS description
+"Vote yes on proposal 178" | `lido_cast_vote(vote_id: 178, vote_for: true, dry_run: true)` → confirm
+"Any Easy Track motions?" | `lido_get_easy_track_motions`
+"Is governance blocked?" | `lido_get_dual_governance_state`
 "Is my withdrawal ready?" | `lido_get_withdrawal_status`
+"Convert 5 stETH to wstETH amount" | `lido_convert(from: "stETH", to: "wstETH", amount: "5")`
+"Send 1 stETH to 0x..." | `lido_transfer(token: "stETH", to: "0x...", amount: "1")`
 "Is the server working?" | `lido_status`
+"Can I still stake?" | `lido_is_staking_paused` + `lido_get_staking_limit`
