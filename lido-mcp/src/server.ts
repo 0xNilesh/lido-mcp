@@ -17,6 +17,7 @@ import { register as registerEasyTrack } from "./tools/easy-track-gov/index.js";
 import { register as registerDualGovernance } from "./tools/dual-governance-gov/index.js";
 import { register as registerProtocol } from "./tools/protocol/index.js";
 import { register as registerSystem } from "./tools/system/index.js";
+import { register as registerStVaults } from "./tools/stvaults/index.js";
 
 // ---------------------------------------------------------------------------
 // Skill file loader
@@ -85,6 +86,7 @@ export async function createServer(): Promise<{
   registerDualGovernance(server, provider);
   registerProtocol(server, provider);
   registerSystem(server, provider);
+  registerStVaults(server, provider);
 
   return { server, provider };
 }

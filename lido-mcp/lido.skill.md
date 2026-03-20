@@ -1,6 +1,6 @@
 # Lido Liquid Staking -- Agent Skill File
 
-You are connected to a Lido MCP server. Before calling any tools, read this entire file. It gives you the mental model you need to help users stake, unstake, wrap, and govern with Lido safely.
+You are connected to a Lido MCP server with 67 tools spanning staking, wrapping, withdrawals, governance, stVaults (V3), and more. Before calling any tools, read this entire file. It gives you the mental model you need to help users stake, unstake, wrap, manage staking vaults, and govern with Lido safely.
 
 ---
 
@@ -32,6 +32,13 @@ Lido is the largest liquid staking protocol on Ethereum. When you stake ETH thro
 ### LDO (Governance Token)
 - LDO is the Lido DAO governance token. You need LDO to vote on proposals.
 - LDO is a standard ERC-20 -- no rebasing, no wrapping. It is used exclusively for governance voting power.
+
+### stVaults (Lido V3)
+- stVaults are modular staking vaults introduced in Lido V3. Each vault is independently managed by an owner and node operator.
+- Vaults hold ETH, stake it via beacon chain deposits, and can mint stETH against collateral through VaultHub.
+- VaultHub is the central registry that tracks all vaults, enforces collateralization rules, and coordinates minting/burning.
+- Vaults have health status — an unhealthy vault may be subject to forced rebalancing.
+- Use `lido_list_vaults` to browse, `lido_get_vault` for details, and `lido_vault_fund`/`lido_vault_withdraw` to manage.
 
 ---
 
@@ -181,6 +188,17 @@ These are non-negotiable. Violating them can lose user funds or cause confusion.
 | `lido_get_dual_governance_state` | read | Current state: Normal / VetoSignalling / Blocked / RageQuit |
 | `lido_get_governance_overview` | read | Full governance landscape: DG state + links |
 
+### 🏗 stVaults (V3)
+| Tool | Type | What It Does |
+|------|------|-------------|
+| `lido_list_vaults` | read | List staking vaults from VaultHub (paginated, shows connected/healthy/value) |
+| `lido_get_vault` | read | Full vault details — owner, operator, depositor, value, locked, credentials |
+| `lido_get_vault_hub_stats` | read | VaultHub overview — total vault count and addresses |
+| `lido_vault_fund` | write | Deposit ETH into a staking vault |
+| `lido_vault_withdraw` | write | Withdraw ETH from a vault to a recipient |
+| `lido_vault_pause_deposits` | write | Pause beacon chain deposits for a vault |
+| `lido_vault_resume_deposits` | write | Resume beacon chain deposits for a vault |
+
 ### ⬢ Protocol Infrastructure
 | Tool | Type | What It Does |
 |------|------|-------------|
@@ -253,6 +271,14 @@ These are non-negotiable. Violating them can lose user funds or cause confusion.
 1. `lido_stake_and_wrap` -- sends ETH directly to the wstETH contract
 2. More gas-efficient than staking then wrapping separately
 3. Useful when the user wants wstETH directly (for DeFi or bridging)
+
+### Manage a Staking Vault (V3)
+1. `lido_get_vault_hub_stats` -- check how many vaults exist
+2. `lido_list_vaults` -- browse vaults, find one by address or index
+3. `lido_get_vault` -- inspect a specific vault: owner, operator, health, value, locked ETH
+4. `lido_vault_fund` with `dry_run: true` -- simulate depositing ETH
+5. User confirms → `lido_vault_fund` with `dry_run: false` -- execute
+6. Monitor: `lido_get_vault` periodically to check health and value
 
 ---
 
@@ -341,3 +367,6 @@ User says... | You do
 "Send 1 stETH to 0x..." | `lido_transfer(token: "stETH", to: "0x...", amount: "1")`
 "Is the server working?" | `lido_status`
 "Can I still stake?" | `lido_is_staking_paused` + `lido_get_staking_limit`
+"Show me vaults" / "List staking vaults" | `lido_list_vaults`
+"Tell me about vault 0xABC..." | `lido_get_vault(vault_address: "0xABC...")`
+"Fund vault with 10 ETH" | `lido_vault_fund(vault_address: "0x...", amount: "10", dry_run: true)` → confirm
