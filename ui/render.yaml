@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: free
     buildCommand: |
-      cd ../lido-mcp && npm install && npm run build &&
-      cd ../lido-mcp-ui && npm install
+      cd ../mcp && npm install && npm run build &&
+      cd ../ui && npm install
     startCommand: npx tsx server/proxy.ts
     envVars:
       - key: NODE_VERSION

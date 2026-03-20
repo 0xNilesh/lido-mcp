@@ -35,7 +35,7 @@ Lido MCP Server is a Model Context Protocol server that gives AI agents full acc
 
 ```bash
 git clone https://github.com/0xNilesh/lido-mcp.git
-cd lido-mcp
+cd mcp
 npm install
 npm run build
 ```
@@ -74,12 +74,12 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 {
   "mcpServers": {
     "lido": {
-      "command": "node",
-      "args": ["/absolute/path/to/lido-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "lido-mcp"],
       "env": {
-        "ETHEREUM_RPC_URL": "https://eth.drpc.org",
+        "ETHEREUM_RPC_URL": "https://hoodi.drpc.org",
         "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY",
-        "CHAIN_ID": "17000"
+        "CHAIN_ID": "560048"
       }
     }
   }
@@ -94,12 +94,12 @@ Add to `.cursor/mcp.json` in your project:
 {
   "mcpServers": {
     "lido": {
-      "command": "node",
-      "args": ["/absolute/path/to/lido-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "lido-mcp"],
       "env": {
-        "ETHEREUM_RPC_URL": "https://eth.drpc.org",
+        "ETHEREUM_RPC_URL": "https://hoodi.drpc.org",
         "PRIVATE_KEY": "0xYOUR_PRIVATE_KEY",
-        "CHAIN_ID": "17000"
+        "CHAIN_ID": "560048"
       }
     }
   }
@@ -237,7 +237,7 @@ Add to `.cursor/mcp.json` in your project:
 
 ---
 
-## Frontend (lido-mcp-ui)
+## Frontend (ui)
 
 A companion web application built with Next.js that provides a visual interface for the MCP server.
 

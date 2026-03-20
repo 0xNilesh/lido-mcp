@@ -44,8 +44,8 @@ function loadEnvFile(p: string): Record<string, string> {
 }
 
 async function initMCP() {
-  const mcpPath = path.resolve(__dirname, '../../lido-mcp/dist/index.js');
-  const envPath = path.resolve(__dirname, '../../lido-mcp/.env');
+  const mcpPath = path.resolve(__dirname, '../../mcp/dist/index.js');
+  const envPath = path.resolve(__dirname, '../../mcp/.env');
   const env = loadEnvFile(envPath);
   console.log(`MCP: ${mcpPath} | Chain: ${env.CHAIN_ID || '560048'}`);
 
