@@ -66,7 +66,7 @@ Edit `.env`:
 ```
 ETHEREUM_RPC_URL=https://eth.drpc.org          # Any Ethereum RPC
 PRIVATE_KEY=0xac0974...                         # Optional: needed for write ops
-CHAIN_ID=17000                                  # 17000 = Hoodi testnet, 1 = Mainnet
+CHAIN_ID=560048                                  # 560048 = Hoodi testnet, 1 = Mainnet
 ```
 
 No private key? The server runs in **read-only mode** -- you can still query balances, rewards, protocol info, and governance.
