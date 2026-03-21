@@ -116,10 +116,10 @@ function App() {
           </div>
 
           {/* MCP Status */}
-          <div className="mcp-status">
+          <a href="https://www.npmjs.com/package/lido-mcp" target="_blank" rel="noopener noreferrer" className="mcp-status" style={{ textDecoration: 'none', cursor: 'pointer' }}>
             <span className={`status-dot ${mcpConnected ? 'status-connected' : 'status-disconnected'}`} />
             <span className="status-text">MCP</span>
-          </div>
+          </a>
 
           {/* Impersonate Button */}
           <div className="impersonate-wrapper">
