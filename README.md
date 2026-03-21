@@ -1,8 +1,15 @@
-# Lido MCP Server
+# Lido MCP
 
-> The most comprehensive MCP server for Ethereum liquid staking. Stake, wrap, govern, and manage staking vaults -- all from AI agents.
+> The most comprehensive MCP server for Ethereum liquid staking. Stake, wrap, govern, and manage staking vaults — all from AI agents.
 
-**67 tools** · **3 chains** · **11 L2s** · **12 domains** · **dry-run safety on every write**
+**67 tools** · **3 chains** · **11 L2s** · **12 domains** · **dry-run safety on every write** · **[npm](https://www.npmjs.com/package/lido-mcp)**
+
+```
+synthesis/
+├── mcp/     → MCP server (67 tools, published as lido-mcp on npm)
+├── ui/      → Agent Console (React + RainbowKit + AI search)
+└── cli/     → CLI tool (lido search "my rewards")
+```
 
 ---
 
