@@ -1,6 +1,6 @@
 {
   "name": "lido-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A MCP server that provides Claude AI and other MCP-compatible agents with real-time access to Lido liquid staking on Ethereum — stake, unstake, wrap, govern, and manage staking positions directly from a conversation.",
   "type": "module",
   "author": "Nilesh Gupta",
