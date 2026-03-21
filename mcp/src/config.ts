@@ -6,13 +6,24 @@ export interface Config {
   maxDailySpendEth: number;
 }
 
+const DEFAULT_RPCS: Record<number, string> = {
+  1: "https://eth.drpc.org",
+  17000: "https://holesky.drpc.org",
+  560048: "https://hoodi.drpc.org",
+};
+
 export function loadConfig(): Config {
-  const rpcUrl = process.env.ETHEREUM_RPC_URL;
-  if (!rpcUrl || rpcUrl.trim() === "") {
-    throw new Error(
-      "ETHEREUM_RPC_URL is required. Set it to an Ethereum JSON-RPC endpoint (e.g. https://eth.drpc.org)."
-    );
+  // Parse chainId — defaults to Hoodi (560048) if not set
+  let chainId: 1 | 17000 | 560048 = 560048;
+  const rawChainId = process.env.CHAIN_ID;
+  if (rawChainId !== undefined && rawChainId !== "") {
+    const parsed = Number(rawChainId);
+    if (parsed === 1 || parsed === 17000 || parsed === 560048) {
+      chainId = parsed as 1 | 17000 | 560048;
+    }
   }
+
+  const rpcUrl = process.env.ETHEREUM_RPC_URL?.trim() || DEFAULT_RPCS[chainId] || "https://hoodi.drpc.org";
 
   let privateKey: `0x${string}` | undefined;
   const rawKey = process.env.PRIVATE_KEY;
@@ -25,17 +36,7 @@ export function loadConfig(): Config {
     privateKey = rawKey as `0x${string}`;
   }
 
-  let chainId: 1 | 17000 | 560048 = 17000;
-  const rawChainId = process.env.CHAIN_ID;
-  if (rawChainId !== undefined && rawChainId !== "") {
-    const parsed = Number(rawChainId);
-    if (parsed !== 1 && parsed !== 17000 && parsed !== 560048) {
-      throw new Error(
-        `CHAIN_ID must be 1 (mainnet), 17000 (holesky), or 560048 (hoodi). Got: ${rawChainId}`
-      );
-    }
-    chainId = parsed as 1 | 17000 | 560048;
-  }
+  // chainId already parsed above
 
   let maxTransactionEth = 100;
   const rawMaxTx = process.env.MAX_TRANSACTION_ETH;
