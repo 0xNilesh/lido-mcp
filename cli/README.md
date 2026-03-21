@@ -5,13 +5,21 @@ Command-line interface for interacting with all 67 Lido MCP tools directly from 
 ## Install
 
 ```bash
-npm install -g @lido-mcp/cli
+npm install -g lido-mcp-cli
 ```
 
-Or run directly:
+Or run without installing:
 
 ```bash
-npx @lido-mcp/cli
+npx lido-mcp-cli
+```
+
+Or from source:
+
+```bash
+git clone https://github.com/0xnilesh/lido-mcp.git
+cd lido-mcp/cli
+npm install && npm run build && npm link
 ```
 
 ## Setup

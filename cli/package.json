@@ -1,10 +1,16 @@
 {
-  "name": "@lido-mcp/cli",
+  "name": "lido-mcp-cli",
   "version": "0.1.0",
-  "description": "CLI for Lido MCP — interact with 67 Lido staking tools from your terminal",
+  "description": "CLI for Lido MCP - interact with 67 Lido staking tools from your terminal",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/0xnilesh/lido-mcp"
+  },
+  "keywords": ["lido", "mcp", "cli", "staking", "ethereum", "steth"],
   "type": "module",
   "bin": { "lido": "./dist/index.js" },
   "main": "./dist/index.js",
+  "files": ["dist", "README.md"],
   "author": "Nilesh Gupta",
   "license": "MIT",
   "scripts": {
