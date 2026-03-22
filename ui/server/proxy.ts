@@ -2,6 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+  ListResourcesRequestSchema,
+  ReadResourceRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 import { spawn, type ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -150,11 +158,66 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
+// ─── SSE MCP Transport ───
+const sseTransports = new Map<string, SSEServerTransport>();
+
+function createProxyServer(): Server {
+  const server = new Server(
+    { name: 'lido-mcp-proxy', version: '1.0.0' },
+    { capabilities: { tools: {}, resources: {} } },
+  );
+
+  server.setRequestHandler(ListToolsRequestSchema, async () => {
+    const result = await client.listTools();
+    return { tools: result.tools };
+  });
+
+  server.setRequestHandler(CallToolRequestSchema, async (req) => {
+    return await client.callTool({ name: req.params.name, arguments: req.params.arguments ?? {} });
+  });
+
+  server.setRequestHandler(ListResourcesRequestSchema, async () => {
+    const result = await client.listResources();
+    return { resources: result.resources };
+  });
+
+  server.setRequestHandler(ReadResourceRequestSchema, async (req) => {
+    return await client.readResource({ uri: req.params.uri });
+  });
+
+  return server;
+}
+
+app.get('/sse', async (_req, res) => {
+  console.log('SSE client connected');
+  const transport = new SSEServerTransport('/messages', res);
+  sseTransports.set(transport.sessionId, transport);
+
+  res.on('close', () => {
+    console.log(`SSE session ${transport.sessionId} disconnected`);
+    sseTransports.delete(transport.sessionId);
+  });
+
+  const server = createProxyServer();
+  await server.connect(transport);
+});
+
+app.post('/messages', async (req, res) => {
+  const sessionId = req.query.sessionId as string;
+  const transport = sseTransports.get(sessionId);
+  if (!transport) {
+    res.status(400).json({ error: 'No transport found for sessionId' });
+    return;
+  }
+  await transport.handlePostMessage(req, res, req.body);
+});
+
 // Serve skill file as plain text
 app.get('/skill.md', async (_req, res) => {
   try {
     const result = await client.readResource({ uri: 'lido://skill' });
-    const text = result.contents?.[0]?.text || 'Skill file not available';
+    const content = result.contents?.[0];
+    const text = (content && 'text' in content ? content.text : null) || 'Skill file not available';
     res.setHeader('Content-Type', 'text/markdown');
     res.send(text);
   } catch (e: any) {
