@@ -150,6 +150,18 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
+// Serve skill file as plain text
+app.get('/skill.md', async (_req, res) => {
+  try {
+    const result = await client.readResource({ uri: 'lido://skill' });
+    const text = result.contents?.[0]?.text || 'Skill file not available';
+    res.setHeader('Content-Type', 'text/markdown');
+    res.send(text);
+  } catch (e: any) {
+    res.status(500).send('Failed to load skill file');
+  }
+});
+
 // ─── Start ───
 const PORT = 3001;
 initMCP().then(() => {
