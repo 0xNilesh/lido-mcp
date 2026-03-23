@@ -12,6 +12,14 @@
 - **CLI:** [npm: lido-mcp-cli](https://www.npmjs.com/package/lido-mcp-cli)
 
 
+### Screenshots
+
+**Dashboard** — auto-loads position, balances, rewards, withdrawals with claim buttons
+![Dashboard](assets/dashboard.png)
+
+**Terminal** — 67 tools categorized by domain, interactive parameter prompting
+![Terminal](assets/terminal.png)
+
 ```
 lido-mcp/
 ├── mcp/     → MCP server (67 tools, published as lido-mcp on npm)
