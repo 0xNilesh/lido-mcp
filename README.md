@@ -7,7 +7,7 @@
 ### Links
 
 - **Live Demo:** [lido-mcp.vercel.app](https://lido-mcp.vercel.app)
-- **MCP API:** [lido-mcp.onrender.com](https://lido-mcp.onrender.com)
+- **MCP API:** [lido-mcp.onrender.com/mcp](https://lido-mcp.onrender.com/mcp)
 - **MCP Server:** [npm: lido-mcp](https://www.npmjs.com/package/lido-mcp)
 - **CLI:** [npm: lido-mcp-cli](https://www.npmjs.com/package/lido-mcp-cli)
 

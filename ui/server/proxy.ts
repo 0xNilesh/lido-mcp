@@ -4,12 +4,15 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
+  isInitializeRequest,
 } from '@modelcontextprotocol/sdk/types.js';
+import { randomUUID } from 'node:crypto';
 import { spawn, type ChildProcess } from 'child_process';
 import path from 'path';
 import fs from 'fs';
@@ -158,8 +161,8 @@ app.get('/api/search', async (req, res) => {
   }
 });
 
-// ─── SSE MCP Transport ───
-const sseTransports = new Map<string, SSEServerTransport>();
+// ─── MCP Transports ───
+const transports = new Map<string, SSEServerTransport | StreamableHTTPServerTransport>();
 
 function createProxyServer(): Server {
   const server = new Server(
@@ -188,14 +191,49 @@ function createProxyServer(): Server {
   return server;
 }
 
+// ─── Streamable HTTP Transport (/mcp) ───
+app.all('/mcp', async (req, res) => {
+  const sessionId = req.headers['mcp-session-id'] as string | undefined;
+  let transport: StreamableHTTPServerTransport;
+
+  if (sessionId && transports.has(sessionId)) {
+    const existing = transports.get(sessionId)!;
+    if (!(existing instanceof StreamableHTTPServerTransport)) {
+      res.status(400).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Session uses a different transport' }, id: null });
+      return;
+    }
+    transport = existing;
+  } else if (!sessionId && req.method === 'POST' && isInitializeRequest(req.body)) {
+    transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      onsessioninitialized: (sid) => {
+        transports.set(sid, transport);
+        console.log(`Streamable HTTP session initialized: ${sid}`);
+      },
+    });
+    transport.onclose = () => {
+      const sid = transport.sessionId;
+      if (sid) { transports.delete(sid); console.log(`Streamable HTTP session closed: ${sid}`); }
+    };
+    const server = createProxyServer();
+    await server.connect(transport);
+  } else {
+    res.status(400).json({ jsonrpc: '2.0', error: { code: -32000, message: 'Bad Request: No valid session ID provided' }, id: null });
+    return;
+  }
+
+  await transport.handleRequest(req, res, req.body);
+});
+
+// ─── Legacy SSE Transport (/sse + /messages) ───
 app.get('/sse', async (_req, res) => {
   console.log('SSE client connected');
   const transport = new SSEServerTransport('/messages', res);
-  sseTransports.set(transport.sessionId, transport);
+  transports.set(transport.sessionId, transport);
 
   res.on('close', () => {
     console.log(`SSE session ${transport.sessionId} disconnected`);
-    sseTransports.delete(transport.sessionId);
+    transports.delete(transport.sessionId);
   });
 
   const server = createProxyServer();
@@ -204,9 +242,9 @@ app.get('/sse', async (_req, res) => {
 
 app.post('/messages', async (req, res) => {
   const sessionId = req.query.sessionId as string;
-  const transport = sseTransports.get(sessionId);
-  if (!transport) {
-    res.status(400).json({ error: 'No transport found for sessionId' });
+  const transport = transports.get(sessionId);
+  if (!transport || !(transport instanceof SSEServerTransport)) {
+    res.status(400).json({ error: 'No SSE transport found for sessionId' });
     return;
   }
   await transport.handlePostMessage(req, res, req.body);
